@@ -1,18 +1,28 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { User, LogOut, Edit, Ticket, Music } from 'lucide-react'
+import { User, LogOut, Edit, Ticket, Music, Save, X } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
 import { PageLoader } from '../components/ui/LoadingSpinner'
+import Button from '../components/ui/Button'
 
 export default function AccountPage() {
   const { user, profile, loading, signOut } = useAuth()
   const navigate = useNavigate()
+  const [editing, setEditing] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) navigate('/login')
   }, [user, loading, navigate])
+
+  useEffect(() => {
+    if (profile?.full_name) setEditName(profile.full_name)
+    else if (user?.email) setEditName(user.email.split('@')[0])
+  }, [profile, user])
 
   async function handleSignOut() {
     await signOut()
@@ -20,8 +30,28 @@ export default function AccountPage() {
     navigate('/')
   }
 
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault()
+    if (!user) return
+    setSaving(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ full_name: editName.trim(), updated_at: new Date().toISOString() })
+      .eq('id', user.id)
+    setSaving(false)
+    if (error) {
+      toast.error('Failed to save profile')
+    } else {
+      toast.success('Profile updated!')
+      setEditing(false)
+      window.location.reload()
+    }
+  }
+
   if (loading) return <PageLoader />
   if (!user) return null
+
+  const displayName = profile?.full_name || user.email?.split('@')[0]
 
   return (
     <div className="min-h-screen bg-dark-800 pt-24">
@@ -48,7 +78,7 @@ export default function AccountPage() {
                   <User size={32} className="text-gold-400" />
                 )}
               </div>
-              <h2 className="font-serif text-xl text-cream mb-1">{profile?.full_name || user.email?.split('@')[0]}</h2>
+              <h2 className="font-serif text-xl text-cream mb-1">{displayName}</h2>
               <p className="text-cream/40 text-sm">{user.email}</p>
               {profile?.is_admin && (
                 <div className="mt-3 inline-block bg-gold-500/20 text-gold-400 text-xs font-display uppercase tracking-widest px-3 py-1 rounded">
@@ -56,7 +86,10 @@ export default function AccountPage() {
                 </div>
               )}
               <div className="mt-6 space-y-3">
-                <button className="w-full flex items-center gap-3 px-4 py-3 bg-dark-600 hover:bg-dark-500 rounded-sm transition-colors text-cream/70 hover:text-cream text-sm">
+                <button
+                  onClick={() => setEditing(true)}
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-dark-600 hover:bg-dark-500 rounded-sm transition-colors text-cream/70 hover:text-cream text-sm"
+                >
                   <Edit size={15} /> Edit Profile
                 </button>
                 <button onClick={handleSignOut}
@@ -66,13 +99,50 @@ export default function AccountPage() {
               </div>
             </motion.div>
 
-            {/* Quick links */}
+            {/* Right column */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
               className="md:col-span-2 space-y-6"
             >
+              {/* Edit profile form */}
+              {editing && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-dark-700 gold-border rounded-sm p-6"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-serif text-xl text-cream">Edit Profile</h3>
+                    <button onClick={() => setEditing(false)} className="text-cream/40 hover:text-cream transition-colors">
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <form onSubmit={handleSaveProfile} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-display uppercase tracking-widest text-cream/50 mb-2">Display Name</label>
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={e => setEditName(e.target.value)}
+                        required
+                        className="w-full bg-dark-800 border border-gold-500/20 rounded-sm px-4 py-3 text-cream placeholder-cream/30 focus:outline-none focus:border-gold-400/50 transition-colors text-sm"
+                      />
+                    </div>
+                    <div className="flex gap-3">
+                      <Button type="submit" loading={saving} size="sm">
+                        <Save size={14} /> Save Changes
+                      </Button>
+                      <button type="button" onClick={() => setEditing(false)}
+                        className="px-4 py-2 text-sm text-cream/50 hover:text-cream transition-colors">
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              )}
+
               {/* Fan perks */}
               <div className="bg-dark-700 gold-border rounded-sm p-6">
                 <h3 className="font-serif text-xl text-cream mb-4">Fan Perks</h3>

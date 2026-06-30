@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './hooks/useAuth'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
+import ScrollToTop from './components/ui/ScrollToTop'
 import Home from './pages/Home'
 import MusicPage from './pages/MusicPage'
 import TourPage from './pages/TourPage'
@@ -14,16 +15,16 @@ import ContactPage from './pages/ContactPage'
 import LoginPage from './pages/LoginPage'
 import AccountPage from './pages/AccountPage'
 import AdminPage from './pages/AdminPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 export default function App() {
   return (
     <AuthProvider>
+      <ScrollToTop />
       <Routes>
-        {/* Admin — full-screen, no Navbar/Footer */}
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/admin/*" element={<AdminPage />} />
 
-        {/* Public site */}
         <Route path="/*" element={
           <div className="min-h-screen bg-dark-800 flex flex-col">
             <Navbar />
@@ -40,6 +41,7 @@ export default function App() {
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/account" element={<AccountPage />} />
+                <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </main>
             <Footer />

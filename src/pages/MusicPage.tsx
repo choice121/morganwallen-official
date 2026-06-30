@@ -16,9 +16,19 @@ export default function MusicPage() {
     supabase
       .from('albums')
       .select('*')
+      .eq('is_published', true)
       .order('release_date', { ascending: false })
       .then(({ data }) => {
-        if (data) setAlbums(data as Album[])
+        if (data) {
+          // Deduplicate: keep first occurrence of each slug (newest crawl wins)
+          const seen = new Set<string>()
+          const unique = (data as Album[]).filter(a => {
+            if (seen.has(a.slug)) return false
+            seen.add(a.slug)
+            return true
+          })
+          setAlbums(unique)
+        }
         setLoading(false)
       })
   }, [])
@@ -46,7 +56,6 @@ export default function MusicPage() {
 
   return (
     <div className="min-h-screen bg-dark-800 pt-24">
-      {/* Page header */}
       <div className="relative py-20 px-4 bg-dark-900 overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <img src={PLACEHOLDER_IMAGES.hero} alt="" className="w-full h-full object-cover" />
@@ -55,6 +64,7 @@ export default function MusicPage() {
         <div className="relative z-10 max-w-7xl mx-auto">
           <p className="section-subtitle mb-4">Discography</p>
           <h1 className="section-title">Music</h1>
+          <p className="mt-4 text-cream/50 max-w-xl">{albums.length > 0 ? `${albums.length} releases` : ''}</p>
         </div>
       </div>
 
@@ -67,7 +77,7 @@ export default function MusicPage() {
                   key={album.id}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.15 }}
+                  transition={{ delay: Math.min(i * 0.05, 0.5) }}
                   className="grid grid-cols-1 md:grid-cols-3 gap-8"
                 >
                   {/* Album art */}
@@ -86,16 +96,22 @@ export default function MusicPage() {
                       )}
                     </div>
                     <div className="mt-4 flex gap-3">
-                      {album.spotify_url && (
+                      {album.spotify_url && !album.spotify_url.includes('placeholder') && (
                         <a href={album.spotify_url} target="_blank" rel="noreferrer"
                           className="flex items-center gap-2 text-xs text-cream/50 hover:text-green-400 transition-colors font-display uppercase tracking-wider">
                           <Music size={14} /> Spotify
                         </a>
                       )}
-                      {album.apple_music_url && (
+                      {album.apple_music_url && !album.apple_music_url.includes('placeholder') && (
                         <a href={album.apple_music_url} target="_blank" rel="noreferrer"
                           className="flex items-center gap-2 text-xs text-cream/50 hover:text-pink-400 transition-colors font-display uppercase tracking-wider">
                           <ExternalLink size={12} /> Apple Music
+                        </a>
+                      )}
+                      {album.youtube_url && !album.youtube_url.includes('deezer') && (
+                        <a href={album.youtube_url} target="_blank" rel="noreferrer"
+                          className="flex items-center gap-2 text-xs text-cream/50 hover:text-red-400 transition-colors font-display uppercase tracking-wider">
+                          <ExternalLink size={12} /> YouTube
                         </a>
                       )}
                     </div>

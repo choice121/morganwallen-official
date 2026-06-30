@@ -39,11 +39,18 @@ export default function NewsPostPage() {
     </div>
   )
 
+  const hasContent = post?.content && post.content.trim().length > 0
+
   return (
     <div className="min-h-screen bg-dark-800 pt-24">
       {/* Hero image */}
       <div className="relative h-72 md:h-96 overflow-hidden">
-        <img src={post?.cover_image ? ikUrl(post.cover_image) : PLACEHOLDER_IMAGES.news} alt={post?.title} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.news }} />
+        <img
+          src={post?.cover_image ? ikUrl(post.cover_image) : PLACEHOLDER_IMAGES.news}
+          alt={post?.title}
+          className="w-full h-full object-cover"
+          onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.news }}
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-dark-800 via-dark-800/50 to-transparent" />
       </div>
 
@@ -72,10 +79,25 @@ export default function NewsPostPage() {
 
           <div className="h-px bg-gradient-to-r from-gold-500/50 to-transparent mb-10" />
 
-          <div
-            className="prose prose-invert prose-lg max-w-none text-cream/70 leading-relaxed [&_p]:mb-6 [&_h2]:font-serif [&_h2]:text-cream [&_h2]:text-2xl [&_h2]:mt-10 [&_h2]:mb-4"
-            dangerouslySetInnerHTML={{ __html: post?.content ?? '' }}
-          />
+          {hasContent ? (
+            <div
+              className="prose prose-invert prose-lg max-w-none text-cream/70 leading-relaxed [&_p]:mb-6 [&_h2]:font-serif [&_h2]:text-cream [&_h2]:text-2xl [&_h2]:mt-10 [&_h2]:mb-4"
+              dangerouslySetInnerHTML={{ __html: post?.content ?? '' }}
+            />
+          ) : post?.excerpt ? (
+            <div className="space-y-6">
+              <p className="text-cream/70 text-lg leading-relaxed font-serif italic">
+                {post.excerpt}
+              </p>
+              <div className="pt-4 border-t border-gold-500/10">
+                <p className="text-cream/30 text-sm">
+                  For the full story, visit the original source.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-cream/40 italic">No content available for this post.</p>
+          )}
 
           <div className="mt-16 pt-8 border-t border-gold-500/10">
             <Link to="/news" className="btn-outline inline-flex items-center gap-2">

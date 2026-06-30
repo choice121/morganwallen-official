@@ -57,7 +57,7 @@ export default function Navbar() {
                   key={link.href}
                   to={link.href}
                   className={`px-4 py-2 text-xs font-display font-medium uppercase tracking-widest transition-colors duration-200 ${
-                    location.pathname === link.href
+                    location.pathname === link.href || (link.href !== '/' && location.pathname.startsWith(link.href))
                       ? 'text-gold-400'
                       : 'text-cream/70 hover:text-cream'
                   }`}
@@ -116,7 +116,7 @@ export default function Navbar() {
                     <Link
                       to={link.href}
                       className={`block py-4 text-2xl font-serif font-semibold border-b border-gold-500/10 transition-colors ${
-                        location.pathname === link.href ? 'text-gold-400' : 'text-cream/80 hover:text-gold-400'
+                        location.pathname === link.href || (link.href !== '/' && location.pathname.startsWith(link.href)) ? 'text-gold-400' : 'text-cream/80 hover:text-gold-400'
                       }`}
                     >
                       {link.label}
