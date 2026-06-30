@@ -168,6 +168,11 @@ async def run() -> dict:
                 dz_tracks = await _get_tracks(client, dz_album["id"])
                 if dz_tracks:
                     track_rows = [_track_record(t, album_db_id) for t in dz_tracks]
+                    # Deduplicate by track_number (Deezer can return duplicates for bonus tracks)
+                    seen_tn: set = set()
+                    track_rows = [r for r in track_rows
+                                  if r["track_number"] not in seen_tn
+                                  and not seen_tn.add(r["track_number"])]  # type: ignore[func-returns-value]
                     await db.upsert("tracks", track_rows, on_conflict="album_id,track_number")
                     stats["tracks"] += len(track_rows)
                     logger.info("  ↳ %s — %d tracks", dz_album.get("title"), len(track_rows))

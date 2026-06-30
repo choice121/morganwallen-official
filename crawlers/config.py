@@ -39,7 +39,7 @@ class Config:
     # ── Artist constants ──────────────────────────────────────────────────────
     ARTIST_NAME: str = "Morgan Wallen"
     ARTIST_SPOTIFY_ID: str = "4oUHIQIBe0LHzYfvXgpM2U"     # unused (kept for reference)
-    ARTIST_YOUTUBE_CHANNEL_ID: str = "UCqFKhz5LzXTVCDVSMZ4N6Yw"  # Morgan Wallen official
+    ARTIST_YOUTUBE_CHANNEL_ID: str = "UCzIyoPv6j1MAZpDHKLGP_eA"  # Morgan Wallen official (verified)
 
     # ── Crawl settings ────────────────────────────────────────────────────────
     REQUEST_TIMEOUT: int = 30

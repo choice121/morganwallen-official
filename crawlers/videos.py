@@ -142,10 +142,11 @@ async def _video_records_from_ids(
     records = []
     for vid_id in video_ids:
         rss_entry = rss_map.get(vid_id)
+        published_at: str | None = None
         if rss_entry:
             title = rss_entry["title"]
             description = rss_entry["description"]
-            published_at = rss_entry["published"] or "2020-01-01"
+            published_at = rss_entry["published"] or None
         else:
             # Try oEmbed for title (free, no auth)
             try:
@@ -158,18 +159,15 @@ async def _video_records_from_ids(
                     oembed = oembed_resp.json()
                     title = oembed.get("title", f"Morgan Wallen — Video {vid_id}")
                     description = ""
-                    published_at = "2020-01-01"
                 else:
                     title = f"Morgan Wallen — {vid_id}"
                     description = ""
-                    published_at = "2020-01-01"
                 await asyncio.sleep(0.2)
             except Exception:
                 title = f"Morgan Wallen — {vid_id}"
                 description = ""
-                published_at = "2020-01-01"
 
-        records.append({
+        record: dict = {
             "title": title,
             "description": truncate(description, 500),
             "youtube_url": f"https://www.youtube.com/watch?v={vid_id}",
@@ -178,8 +176,11 @@ async def _video_records_from_ids(
             "category": _infer_category(title, description),
             "duration_seconds": None,
             "is_published": True,
-            "published_at": published_at,
-        })
+        }
+        # Only include published_at when we know the real date (avoids fake placeholder dates)
+        if published_at:
+            record["published_at"] = published_at
+        records.append(record)
     return records
 
 

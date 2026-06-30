@@ -13,6 +13,7 @@ Populates:
 """
 
 import asyncio
+import hashlib
 import logging
 import re
 from datetime import datetime
@@ -217,7 +218,9 @@ async def run() -> dict:
                     if not url or not title or len(title) < 5:
                         continue
 
-                    slug = slugify(title)
+                    # Include URL hash in slug to prevent cross-source title collisions
+                    url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
+                    slug = slugify(title)[:80] + "-" + url_hash
                     excerpt = truncate((article.get("excerpt") or "").strip(), 280)
 
                     # Crawl full article content

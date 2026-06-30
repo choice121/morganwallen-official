@@ -1,14 +1,12 @@
 name: 🎸 Morgan Wallen — Content Crawlers
 
 on:
-  # ── Automatic schedules ────────────────────────────────────────────────────
+  # Single schedule every 2 hours — all crawlers are idempotent upserts,
+  # so running them frequently is safe and keeps content fresh.
   schedule:
-    - cron: "0 */2 * * *"    # news: every 2 hours
-    - cron: "0 */6 * * *"    # tour: every 6 hours
-    - cron: "0 8 * * *"      # videos + merch + gallery: daily 8 AM UTC
-    - cron: "0 9 * * 1"      # albums: weekly Monday 9 AM UTC
+    - cron: "0 */2 * * *"
 
-  # ── Manual trigger ─────────────────────────────────────────────────────────
+  # Manual trigger with per-crawler selection
   workflow_dispatch:
     inputs:
       crawler:
@@ -25,18 +23,17 @@ on:
           - videos
           - gallery
 
-concurrency:
-  group: crawlers-${{ github.event.inputs.crawler || 'scheduled' }}-${{ github.ref }}
-  cancel-in-progress: false
-
-# ── Shared install step (composite would be cleaner but this is simpler) ──────
-# Each job installs deps independently on fresh Ubuntu runners.
+# Each crawler gets its own concurrency group so they run in parallel
+# and don't cancel each other.
 
 jobs:
-  # ── Albums & Tracks (Deezer — no extra API key needed) ────────────────────
+  # ── Albums & Tracks (Deezer — no API key needed) ──────────────────────────
   albums:
     name: 🎵 Albums & Tracks
     runs-on: ubuntu-latest
+    concurrency:
+      group: crawler-albums
+      cancel-in-progress: false
     if: |
       (github.event_name == 'workflow_dispatch' && (github.event.inputs.crawler == 'all' || github.event.inputs.crawler == 'albums')) ||
       github.event_name == 'schedule'
@@ -49,9 +46,7 @@ jobs:
           cache-dependency-path: crawlers/requirements.txt
       - name: Install dependencies
         working-directory: crawlers
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+        run: pip install --upgrade pip && pip install -r requirements.txt
       - name: Run albums crawler
         working-directory: crawlers
         env:
@@ -63,6 +58,9 @@ jobs:
   tour:
     name: 🎟️ Tour Dates
     runs-on: ubuntu-latest
+    concurrency:
+      group: crawler-tour
+      cancel-in-progress: false
     if: |
       (github.event_name == 'workflow_dispatch' && (github.event.inputs.crawler == 'all' || github.event.inputs.crawler == 'tour')) ||
       github.event_name == 'schedule'
@@ -75,9 +73,7 @@ jobs:
           cache-dependency-path: crawlers/requirements.txt
       - name: Install dependencies
         working-directory: crawlers
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+        run: pip install --upgrade pip && pip install -r requirements.txt
       - name: Run tour crawler
         working-directory: crawlers
         env:
@@ -89,6 +85,9 @@ jobs:
   news:
     name: 📰 News
     runs-on: ubuntu-latest
+    concurrency:
+      group: crawler-news
+      cancel-in-progress: false
     if: |
       (github.event_name == 'workflow_dispatch' && (github.event.inputs.crawler == 'all' || github.event.inputs.crawler == 'news')) ||
       github.event_name == 'schedule'
@@ -102,8 +101,7 @@ jobs:
       - name: Install dependencies
         working-directory: crawlers
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install --upgrade pip && pip install -r requirements.txt
           python -m playwright install chromium --with-deps
       - name: Run news crawler
         working-directory: crawlers
@@ -116,6 +114,9 @@ jobs:
   merch:
     name: 🛍️ Merch
     runs-on: ubuntu-latest
+    concurrency:
+      group: crawler-merch
+      cancel-in-progress: false
     if: |
       (github.event_name == 'workflow_dispatch' && (github.event.inputs.crawler == 'all' || github.event.inputs.crawler == 'merch')) ||
       github.event_name == 'schedule'
@@ -129,8 +130,7 @@ jobs:
       - name: Install dependencies
         working-directory: crawlers
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install --upgrade pip && pip install -r requirements.txt
           python -m playwright install chromium --with-deps
       - name: Run merch crawler
         working-directory: crawlers
@@ -145,6 +145,9 @@ jobs:
   videos:
     name: 🎬 Videos
     runs-on: ubuntu-latest
+    concurrency:
+      group: crawler-videos
+      cancel-in-progress: false
     if: |
       (github.event_name == 'workflow_dispatch' && (github.event.inputs.crawler == 'all' || github.event.inputs.crawler == 'videos')) ||
       github.event_name == 'schedule'
@@ -158,8 +161,7 @@ jobs:
       - name: Install dependencies
         working-directory: crawlers
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install --upgrade pip && pip install -r requirements.txt
           python -m playwright install chromium --with-deps
       - name: Run videos crawler
         working-directory: crawlers
@@ -172,6 +174,9 @@ jobs:
   gallery:
     name: 🖼️ Gallery
     runs-on: ubuntu-latest
+    concurrency:
+      group: crawler-gallery
+      cancel-in-progress: false
     if: |
       (github.event_name == 'workflow_dispatch' && (github.event.inputs.crawler == 'all' || github.event.inputs.crawler == 'gallery')) ||
       github.event_name == 'schedule'
@@ -185,8 +190,7 @@ jobs:
       - name: Install dependencies
         working-directory: crawlers
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install --upgrade pip && pip install -r requirements.txt
           python -m playwright install chromium --with-deps
       - name: Run gallery crawler
         working-directory: crawlers
