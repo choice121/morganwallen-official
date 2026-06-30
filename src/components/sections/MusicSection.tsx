@@ -6,6 +6,10 @@ import { supabase, Album } from '../../lib/supabase'
 import { ikUrl, PLACEHOLDER_IMAGES } from '../../lib/imagekit'
 import SectionHeader from '../ui/SectionHeader'
 
+const MW_SPOTIFY = 'https://open.spotify.com/artist/4oUHIQIBe0LkMauLosHQ6I'
+const MW_APPLE   = 'https://music.apple.com/us/artist/morgan-wallen/829142092'
+const MW_AMAZON  = 'https://music.amazon.com/artists/B07FGXVYD4/morgan-wallen'
+
 export default function MusicSection() {
   const [albums, setAlbums] = useState<Album[]>([])
 
@@ -59,19 +63,31 @@ export default function MusicSection() {
                   {album?.title ?? 'Loading...'}
                 </h3>
                 <p className="mt-2 text-cream/50 text-sm line-clamp-2">{album?.description ?? ''}</p>
-                <div className="mt-4 flex gap-3">
-                  {album?.spotify_url && (
-                    <a href={album.spotify_url} target="_blank" rel="noreferrer"
-                      className="text-xs text-cream/50 hover:text-green-400 transition-colors font-display uppercase tracking-wider">
-                      Spotify
-                    </a>
-                  )}
-                  {album?.apple_music_url && (
-                    <a href={album.apple_music_url} target="_blank" rel="noreferrer"
-                      className="text-xs text-cream/50 hover:text-pink-400 transition-colors font-display uppercase tracking-wider">
-                      Apple Music
-                    </a>
-                  )}
+                <div className="mt-4 flex gap-3 flex-wrap">
+                  <a
+                    href={album?.spotify_url || MW_SPOTIFY}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-cream/50 hover:text-green-400 transition-colors font-display uppercase tracking-wider"
+                  >
+                    Spotify
+                  </a>
+                  <a
+                    href={album?.apple_music_url || MW_APPLE}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-cream/50 hover:text-pink-400 transition-colors font-display uppercase tracking-wider"
+                  >
+                    Apple Music
+                  </a>
+                  <a
+                    href={MW_AMAZON}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-cream/50 hover:text-blue-400 transition-colors font-display uppercase tracking-wider"
+                  >
+                    Amazon
+                  </a>
                 </div>
               </div>
             </motion.div>

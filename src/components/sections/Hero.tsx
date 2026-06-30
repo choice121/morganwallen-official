@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ChevronDown, Play } from 'lucide-react'
 
+const IK = 'https://ik.imagekit.io/Morganwallen/tr:w-1920,h-1080,fo-auto,q-85'
+
 const HERO_IMAGES = [
-  'https://images.unsplash.com/photo-1501386761578-eaa54b620fe8?w=1920&h=1080&fit=crop&auto=format&q=90',
-  'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1920&h=1080&fit=crop&auto=format&q=90',
-  'https://images.unsplash.com/photo-1468359601543-843bfaef291a?w=1920&h=1080&fit=crop&auto=format&q=90',
+  `${IK}/gallery/press/gallery-press-press-001.jpg`,
+  `${IK}/gallery/press/gallery-press-press-002.jpg`,
+  `${IK}/gallery/live/gallery-yt-mgukVsbihaQ.jpg`,
 ]
 
 export default function Hero() {
@@ -54,21 +56,24 @@ export default function Hero() {
 
       {/* Content */}
       <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
-        {/* Pre-title */}
-        <motion.p
+        {/* New album badge */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.8 }}
-          className="section-subtitle mb-6 text-gold-400"
+          transition={{ delay: 0.2, duration: 0.7 }}
+          className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 border border-gold-400/40 rounded-full"
         >
-          Official Website
-        </motion.p>
+          <span className="w-1.5 h-1.5 rounded-full bg-gold-400 animate-pulse" />
+          <span className="text-gold-400 text-xs font-display uppercase tracking-widest">
+            New Album — I'm The Problem — Out Now
+          </span>
+        </motion.div>
 
         {/* Main title */}
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.9 }}
+          transition={{ delay: 0.4, duration: 0.9 }}
           className="font-serif text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold text-cream leading-none text-shadow"
         >
           Morgan
@@ -80,7 +85,7 @@ export default function Hero() {
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.8 }}
+          transition={{ delay: 0.7, duration: 0.8 }}
           className="mt-6 text-cream/60 text-lg md:text-xl font-sans max-w-lg mx-auto"
         >
           Authentic country music from the heart of Tennessee
@@ -90,13 +95,18 @@ export default function Hero() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.0, duration: 0.8 }}
+          transition={{ delay: 0.9, duration: 0.8 }}
           className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <Link to="/music" className="btn-gold px-8 py-4 text-sm">
+          <a
+            href="https://open.spotify.com/artist/4oUHIQIBe0LkMauLosHQ6I"
+            target="_blank"
+            rel="noreferrer"
+            className="btn-gold px-8 py-4 text-sm"
+          >
             <Play size={16} fill="currentColor" />
-            Latest Music
-          </Link>
+            Listen Now
+          </a>
           <Link to="/tour" className="btn-outline px-8 py-4 text-sm">
             Get Tickets
           </Link>
@@ -106,7 +116,7 @@ export default function Hero() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.4 }}
+          transition={{ delay: 1.3 }}
           className="mt-12 flex gap-2 justify-center"
         >
           {HERO_IMAGES.map((_, i) => (
@@ -126,7 +136,7 @@ export default function Hero() {
         onClick={scrollToContent}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.6 }}
+        transition={{ delay: 1.5 }}
         className="absolute bottom-10 left-1/2 -translate-x-1/2 text-cream/40 hover:text-gold-400 transition-colors animate-float"
         aria-label="Scroll down"
       >

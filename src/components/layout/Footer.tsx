@@ -9,6 +9,22 @@ function TikTokIcon({ size = 16 }: { size?: number }) {
   )
 }
 
+function FacebookIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+    </svg>
+  )
+}
+
+function AmazonMusicIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M13.958 10.09c0 1.232.029 2.256-.591 3.351-.502.891-1.301 1.438-2.186 1.438-1.213 0-1.922-.924-1.922-2.292 0-2.692 2.415-3.182 4.699-3.182v.685zm3.186 7.706a.661.661 0 01-.76.074c-1.068-.886-1.258-1.295-1.845-2.139-1.761 1.796-3.01 2.332-5.296 2.332-2.705 0-4.806-1.67-4.806-5.006 0-2.607 1.413-4.383 3.424-5.252 1.746-.773 4.183-.91 6.048-1.123v-.419c0-.773.06-1.685-.394-2.352-.397-.593-1.162-.838-1.833-.838-1.246 0-2.353.639-2.624 1.964-.056.295-.274.586-.577.601l-3.229-.349c-.271-.061-.572-.28-.494-.696C5.537 1.517 8.778 0 12.357 0c1.81 0 4.179.481 5.608 1.85 1.811 1.689 1.637 3.942 1.637 6.396v5.799c0 1.747.723 2.512 1.405 3.456.237.334.289.733-.012.979-.761.634-2.115 1.81-2.861 2.47l.01-.154zm3.07 3.8c-3.011 2.21-7.377 3.38-11.137 3.38-5.27 0-10.017-1.949-13.605-5.19-.282-.255-.031-.602.309-.404 3.877 2.256 8.666 3.614 13.613 3.614 3.34 0 7.016-.693 10.402-2.131.511-.218.937.337.418.731zm1.199-1.37c-.384-.494-2.543-.233-3.514-.117-.295.035-.34-.222-.074-.41 1.721-1.208 4.544-.859 4.874-.455.33.406-.086 3.24-1.705 4.59-.248.209-.486.097-.376-.177.364-.908 1.178-2.944.795-3.431z"/>
+    </svg>
+  )
+}
+
 const footerLinks = {
   Music: [
     { label: 'Discography', href: '/music' },
@@ -21,7 +37,7 @@ const footerLinks = {
     { label: 'Merch', href: '/merch' },
   ],
   Connect: [
-    { label: 'Fan Login', href: '/login' },
+    { label: 'Fan Club', href: '/login' },
     { label: 'Contact / Press', href: '/contact' },
     { label: 'Newsletter', href: '/#newsletter' },
   ],
@@ -30,11 +46,13 @@ const footerLinks = {
 type SocialIcon = React.ComponentType<{ size?: number }>
 
 const socials: { icon: SocialIcon; href: string; label: string }[] = [
-  { icon: Instagram, href: 'https://instagram.com/morganwallen', label: 'Instagram' },
-  { icon: Twitter, href: 'https://twitter.com/MorganWallen', label: 'X / Twitter' },
-  { icon: TikTokIcon, href: 'https://tiktok.com/@morganwallen', label: 'TikTok' },
-  { icon: Youtube, href: 'https://youtube.com/@morganwallen', label: 'YouTube' },
-  { icon: Music, href: 'https://open.spotify.com/artist/4oUHIQIBe0LkMauLosHQ6I', label: 'Spotify' },
+  { icon: FacebookIcon,     href: 'https://facebook.com/MorganWallen',                              label: 'Facebook' },
+  { icon: Instagram,        href: 'https://instagram.com/morganwallen',                             label: 'Instagram' },
+  { icon: TikTokIcon,       href: 'https://tiktok.com/@morganwallen',                               label: 'TikTok' },
+  { icon: Twitter,          href: 'https://twitter.com/MorganWallen',                               label: 'X / Twitter' },
+  { icon: Youtube,          href: 'https://youtube.com/@morganwallen',                              label: 'YouTube' },
+  { icon: AmazonMusicIcon,  href: 'https://music.amazon.com/artists/B07FGXVYD4/morgan-wallen',     label: 'Amazon Music' },
+  { icon: Music,            href: 'https://open.spotify.com/artist/4oUHIQIBe0LkMauLosHQ6I',        label: 'Spotify' },
 ]
 
 export default function Footer() {
@@ -51,7 +69,7 @@ export default function Footer() {
             <p className="mt-4 text-cream/50 text-sm leading-relaxed max-w-xs">
               Country music artist from Sneedville, Tennessee. Authentic storytelling, real country music.
             </p>
-            <div className="mt-6 flex gap-4">
+            <div className="mt-6 flex flex-wrap gap-3">
               {socials.map(({ icon: Icon, href, label }) => (
                 <a
                   key={label}

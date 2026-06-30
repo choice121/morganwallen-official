@@ -75,7 +75,7 @@ export default function Navbar() {
               >
                 <User size={18} />
                 <span className="text-xs font-display uppercase tracking-widest">
-                  {user ? 'Account' : 'Fan Login'}
+                  {user ? 'Account' : 'Fan Club'}
                 </span>
               </Link>
               <Link to="/merch" className="hidden md:block btn-gold py-2 px-4 text-xs">
@@ -126,17 +126,19 @@ export default function Navbar() {
               </nav>
               <div className="mt-8 flex flex-col gap-4">
                 <Link to={user ? '/account' : '/login'} className="btn-outline w-full justify-center">
-                  {user ? 'My Account' : 'Fan Login'}
+                  {user ? 'My Account' : 'Fan Club'}
                 </Link>
                 <Link to="/merch" className="btn-gold w-full justify-center">
                   Shop Now
                 </Link>
               </div>
               {/* Socials */}
-              <div className="mt-auto flex gap-6 text-cream/40">
+              <div className="mt-auto flex flex-wrap gap-5 text-cream/40">
+                <a href="https://facebook.com/MorganWallen" target="_blank" rel="noreferrer" className="hover:text-gold-400 text-sm uppercase tracking-widest font-display">Facebook</a>
                 <a href="https://instagram.com/morganwallen" target="_blank" rel="noreferrer" className="hover:text-gold-400 text-sm uppercase tracking-widest font-display">Instagram</a>
                 <a href="https://twitter.com/MorganWallen" target="_blank" rel="noreferrer" className="hover:text-gold-400 text-sm uppercase tracking-widest font-display">X</a>
                 <a href="https://tiktok.com/@morganwallen" target="_blank" rel="noreferrer" className="hover:text-gold-400 text-sm uppercase tracking-widest font-display">TikTok</a>
+                <a href="https://youtube.com/@morganwallen" target="_blank" rel="noreferrer" className="hover:text-gold-400 text-sm uppercase tracking-widest font-display">YouTube</a>
               </div>
             </div>
           </motion.div>
