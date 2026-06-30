@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Play, Music, ExternalLink } from 'lucide-react'
 import { supabase, Album, Track } from '../lib/supabase'
-import { PLACEHOLDER_IMAGES } from '../lib/imagekit'
+import { ikUrl, PLACEHOLDER_IMAGES } from '../lib/imagekit'
 import { format } from 'date-fns'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 
@@ -74,7 +74,7 @@ export default function MusicPage() {
                   <div className="md:col-span-1">
                     <div className="relative aspect-square rounded-sm overflow-hidden shadow-card group">
                       <img
-                        src={album.cover_image || PLACEHOLDER_IMAGES.album}
+                        src={album.cover_image ? ikUrl(album.cover_image) : PLACEHOLDER_IMAGES.album}
                         alt={album.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.album }}

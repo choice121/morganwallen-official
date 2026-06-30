@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Play, Music } from 'lucide-react'
 import { supabase, Album } from '../../lib/supabase'
-import { PLACEHOLDER_IMAGES } from '../../lib/imagekit'
+import { ikUrl, PLACEHOLDER_IMAGES } from '../../lib/imagekit'
 import SectionHeader from '../ui/SectionHeader'
 
 export default function MusicSection() {
@@ -35,7 +35,7 @@ export default function MusicSection() {
             >
               <div className="aspect-square relative overflow-hidden">
                 <img
-                  src={album?.cover_image || PLACEHOLDER_IMAGES.album}
+                  src={album?.cover_image ? ikUrl(album.cover_image) : PLACEHOLDER_IMAGES.album}
                   alt={album?.title ?? 'Album'}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.album }}

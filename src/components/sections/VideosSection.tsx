@@ -55,7 +55,7 @@ export default function VideosSection() {
                   <div className="absolute top-3 right-3">
                     <span className="bg-dark-900/80 text-cream/70 text-xs font-display uppercase tracking-wider px-2 py-1 flex items-center gap-1 rounded">
                       <Youtube size={12} className="text-red-500" />
-                      {video.category === 'live' ? 'Live' : 'Music Video'}
+                      {video.category === 'live' ? 'Live' : video.category === 'music_video' ? 'Music Video' : video.category === 'lyric_video' ? 'Lyric Video' : video.category === 'behind_scenes' ? 'Behind the Scenes' : video.category === 'interview' ? 'Interview' : 'Video'}
                     </span>
                   </div>
                 )}

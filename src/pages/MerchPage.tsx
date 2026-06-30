@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ShoppingBag, ExternalLink, Tag } from 'lucide-react'
 import { supabase, MerchItem } from '../lib/supabase'
-import { PLACEHOLDER_IMAGES } from '../lib/imagekit'
+import { ikUrl, PLACEHOLDER_IMAGES } from '../lib/imagekit'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 
 const MERCH_CATS = ['all', 'apparel', 'accessories', 'collectibles']
@@ -62,7 +62,7 @@ export default function MerchPage() {
                 >
                   <div className="aspect-square relative overflow-hidden">
                     <img
-                      src={item.image || PLACEHOLDER_IMAGES.merch}
+                      src={item.image ? ikUrl(item.image) : PLACEHOLDER_IMAGES.merch}
                       alt={item.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.merch }}

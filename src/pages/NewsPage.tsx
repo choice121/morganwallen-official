@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { supabase, NewsPost } from '../lib/supabase'
-import { PLACEHOLDER_IMAGES } from '../lib/imagekit'
+import { ikUrl, PLACEHOLDER_IMAGES } from '../lib/imagekit'
 import { format } from 'date-fns'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 
@@ -15,7 +15,7 @@ export default function NewsPage() {
   const [category, setCategory] = useState('all')
 
   useEffect(() => {
-    const query = supabase.from('news_posts').select('*').eq('is_published', true).order('published_at', { ascending: false })
+    const query = supabase.from('news_posts').select('*').eq('is_published', true).not('published_at', 'is', null).order('published_at', { ascending: false })
     if (category !== 'all') query.eq('category', category)
     query.then(({ data }) => {
       if (data) setPosts(data as NewsPost[])
@@ -61,7 +61,7 @@ export default function NewsPage() {
                 >
                   <div className={`relative overflow-hidden ${i === 0 ? 'aspect-video' : 'aspect-[4/3]'}`}>
                     <img
-                      src={post.cover_image || PLACEHOLDER_IMAGES.news}
+                      src={post.cover_image ? ikUrl(post.cover_image) : PLACEHOLDER_IMAGES.news}
                       alt={post.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.news }}

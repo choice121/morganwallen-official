@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Calendar, Tag } from 'lucide-react'
 import { supabase, NewsPost } from '../lib/supabase'
-import { PLACEHOLDER_IMAGES } from '../lib/imagekit'
+import { ikUrl, PLACEHOLDER_IMAGES } from '../lib/imagekit'
 import { format } from 'date-fns'
 import { PageLoader } from '../components/ui/LoadingSpinner'
 
@@ -43,7 +43,7 @@ export default function NewsPostPage() {
     <div className="min-h-screen bg-dark-800 pt-24">
       {/* Hero image */}
       <div className="relative h-72 md:h-96 overflow-hidden">
-        <img src={PLACEHOLDER_IMAGES.news} alt={post?.title} className="w-full h-full object-cover" />
+        <img src={post?.cover_image ? ikUrl(post.cover_image) : PLACEHOLDER_IMAGES.news} alt={post?.title} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.news }} />
         <div className="absolute inset-0 bg-gradient-to-t from-dark-800 via-dark-800/50 to-transparent" />
       </div>
 

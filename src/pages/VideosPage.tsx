@@ -5,7 +5,7 @@ import { supabase, Video } from '../lib/supabase'
 import { PLACEHOLDER_IMAGES } from '../lib/imagekit'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 
-const CATEGORIES_V = ['all', 'music-video', 'live', 'behind-the-scenes']
+const CATEGORIES_V = ['all', 'music_video', 'live', 'behind_scenes', 'lyric_video', 'interview']
 
 export default function VideosPage() {
   const [videos, setVideos] = useState<Video[]>([])
@@ -45,7 +45,7 @@ export default function VideosPage() {
                   catFilter === cat ? 'bg-gold-500 text-dark-900' : 'border border-gold-500/20 text-cream/50 hover:border-gold-500/40'
                 }`}
               >
-                {cat.replace('-', ' ')}
+                {cat === 'all' ? 'All' : cat === 'music_video' ? 'Music Video' : cat === 'behind_scenes' ? 'Behind the Scenes' : cat === 'lyric_video' ? 'Lyric Video' : cat === 'interview' ? 'Interview' : cat.charAt(0).toUpperCase() + cat.slice(1)}
               </button>
             ))}
           </div>
@@ -80,7 +80,7 @@ export default function VideosPage() {
                     </div>
                     <div className="absolute top-3 right-3 bg-dark-900/80 text-xs font-display uppercase tracking-wider px-2 py-1 flex items-center gap-1 rounded text-cream/70">
                       <Youtube size={11} className="text-red-500" />
-                      {video.category === 'live' ? 'Live' : video.category === 'music-video' ? 'Music Video' : video.category}
+                      {video.category === 'live' ? 'Live' : video.category === 'music_video' ? 'Music Video' : video.category === 'lyric_video' ? 'Lyric Video' : video.category === 'behind_scenes' ? 'Behind the Scenes' : video.category === 'interview' ? 'Interview' : video.category}
                     </div>
                     <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-dark-900 to-transparent">
                       <h3 className="font-serif text-cream font-semibold">{video.title}</h3>

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ShoppingBag, ExternalLink } from 'lucide-react'
 import { supabase, MerchItem } from '../../lib/supabase'
-import { PLACEHOLDER_IMAGES } from '../../lib/imagekit'
+import { ikUrl, PLACEHOLDER_IMAGES } from '../../lib/imagekit'
 import SectionHeader from '../ui/SectionHeader'
 
 export default function MerchSection() {
@@ -36,7 +36,7 @@ export default function MerchSection() {
             >
               <div className="aspect-square overflow-hidden relative">
                 <img
-                  src={item?.image || PLACEHOLDER_IMAGES.merch}
+                  src={item?.image ? ikUrl(item.image) : PLACEHOLDER_IMAGES.merch}
                   alt={item?.name ?? 'Merch'}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.merch }}
