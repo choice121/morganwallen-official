@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase, Profile } from '../lib/supabase'
+import { sendWelcome } from '../lib/email'
 
 type AuthContextType = {
   user: User | null
@@ -53,6 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error, data } = await supabase.auth.signUp({ email, password })
     if (!error && data.user) {
       await supabase.from('profiles').insert({ id: data.user.id, full_name: fullName })
+      // Send welcome email non-blocking
+      sendWelcome(fullName, email).catch(err => console.error('[auth] welcome email error:', err))
     }
     return { error: error as Error | null }
   }

@@ -17,6 +17,7 @@ import logging
 import httpx
 
 from config import Config
+from imagekit_client import upload_image
 from supabase_client import SupabaseClient
 from utils import slugify, retry
 
@@ -40,7 +41,6 @@ async def _find_artist(client: httpx.AsyncClient) -> dict | None:
     data = await _get(client, f"{DEEZER}/search/artist", {"q": Config.ARTIST_NAME, "strict": "on"})
     artists = data.get("data", [])
     if not artists:
-        # Try without strict mode
         data = await _get(client, f"{DEEZER}/search/artist", {"q": Config.ARTIST_NAME})
         artists = data.get("data", [])
     for a in artists:
@@ -71,12 +71,28 @@ async def _get_tracks(client: httpx.AsyncClient, album_id: int) -> list[dict]:
     return data.get("data", [])
 
 
+# ── ImageKit upload ────────────────────────────────────────────────────────────
+
+async def _upload_cover(cover_url: str, slug: str) -> str | None:
+    """
+    Upload a Deezer album cover to ImageKit.
+    Returns the IK filePath or None if upload fails / no IK key configured.
+    Falls back gracefully so the crawler still upserts with the original URL.
+    """
+    if not Config.IMAGEKIT_PRIVATE_KEY:
+        logger.debug("No IMAGEKIT_PRIVATE_KEY — using Deezer CDN URL for cover")
+        return None
+    if not cover_url:
+        return None
+    file_name = f"{slug}.jpg"
+    return await upload_image(cover_url, file_name, "/albums")
+
+
 # ── Transform ──────────────────────────────────────────────────────────────────
 
-def _album_record(dz: dict) -> dict:
+def _album_record(dz: dict, ik_path: str | None) -> dict:
     title = dz.get("title", "")
-    # cover_xl is highest quality (1000×1000)
-    cover = dz.get("cover_xl") or dz.get("cover_big") or dz.get("cover")
+    cover = ik_path or dz.get("cover_xl") or dz.get("cover_big") or dz.get("cover")
     record_type = dz.get("record_type", "album").lower()
     release_date = dz.get("release_date") or None
 
@@ -89,7 +105,7 @@ def _album_record(dz: dict) -> dict:
                        + (f", released {release_date[:4]}." if release_date else "."),
         "spotify_url": None,
         "apple_music_url": None,
-        "youtube_url": dz.get("link"),   # Deezer album page link
+        "youtube_url": dz.get("link"),
         "is_published": True,
     }
 
@@ -99,10 +115,10 @@ def _track_record(dz_track: dict, album_db_id: str) -> dict:
         "album_id": album_db_id,
         "title": dz_track.get("title", ""),
         "track_number": dz_track.get("track_position"),
-        "duration_seconds": dz_track.get("duration"),   # Deezer returns seconds directly
+        "duration_seconds": dz_track.get("duration"),
         "spotify_url": None,
         "apple_music_url": None,
-        "youtube_url": dz_track.get("link"),   # Deezer track page
+        "youtube_url": dz_track.get("link"),
         "is_published": True,
     }
 
@@ -114,7 +130,6 @@ async def run() -> dict:
     stats = {"albums": 0, "tracks": 0, "errors": []}
 
     async with httpx.AsyncClient(timeout=Config.REQUEST_TIMEOUT) as client:
-        # Find the artist
         logger.info("Searching Deezer for '%s'…", Config.ARTIST_NAME)
         artist = await _find_artist(client)
         if not artist:
@@ -124,7 +139,6 @@ async def run() -> dict:
 
         artist_id = artist["id"]
 
-        # Fetch all albums
         logger.info("Fetching discography from Deezer (artist id=%s)…", artist_id)
         dz_albums = await _get_albums(client, artist_id)
         logger.info("Found %d releases on Deezer", len(dz_albums))
@@ -140,14 +154,28 @@ async def run() -> dict:
 
         logger.info("After deduplication: %d unique releases", len(unique_albums))
 
-        # Build album rows and deduplicate by slug (prevents ON CONFLICT affecting same row twice)
+        # Build album rows — upload covers to ImageKit when possible
         slug_seen: set[str] = set()
         album_rows = []
         for a in unique_albums:
-            row = _album_record(a)
-            if row["slug"] not in slug_seen:
-                slug_seen.add(row["slug"])
-                album_rows.append(row)
+            slug = slugify(a.get("title", ""))
+            if slug in slug_seen:
+                continue
+            slug_seen.add(slug)
+
+            # Upload cover to ImageKit (falls back to Deezer URL if unavailable)
+            cover_url = a.get("cover_xl") or a.get("cover_big") or a.get("cover")
+            ik_path = await _upload_cover(cover_url, slug)
+            if ik_path:
+                logger.info("  ↳ Uploaded cover for '%s' → %s", a.get("title"), ik_path)
+            else:
+                logger.debug("  ↳ Using Deezer CDN URL for '%s'", a.get("title"))
+
+            album_rows.append(_album_record(a, ik_path))
+
+            # Small delay to avoid hammering ImageKit
+            await asyncio.sleep(0.2)
+
         logger.info("Unique slugs to upsert: %d", len(album_rows))
 
         upserted = await db.upsert("albums", album_rows, on_conflict="slug")
@@ -168,7 +196,6 @@ async def run() -> dict:
                 dz_tracks = await _get_tracks(client, dz_album["id"])
                 if dz_tracks:
                     track_rows = [_track_record(t, album_db_id) for t in dz_tracks]
-                    # Deduplicate by track_number (Deezer can return duplicates for bonus tracks)
                     seen_tn: set = set()
                     track_rows = [r for r in track_rows
                                   if r["track_number"] not in seen_tn
@@ -180,7 +207,6 @@ async def run() -> dict:
                 logger.error("Tracks fetch failed for '%s': %s", dz_album.get("title"), exc)
                 stats["errors"].append(str(exc))
 
-            # Deezer is generous with rate limits but be polite
             await asyncio.sleep(0.3)
 
     logger.info("Albums done: %d albums, %d tracks", stats["albums"], stats["tracks"])

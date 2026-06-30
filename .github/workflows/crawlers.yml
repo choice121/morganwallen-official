@@ -52,6 +52,8 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          IMAGEKIT_PRIVATE_KEY: ${{ secrets.IMAGEKIT_PRIVATE_KEY }}
+          IMAGEKIT_PUBLIC_KEY: ${{ secrets.IMAGEKIT_PUBLIC_KEY }}
         run: python run_all.py --crawler albums
 
   # ── Tour Dates (Bandsintown — no API key needed) ───────────────────────────
@@ -100,9 +102,12 @@ jobs:
           cache-dependency-path: crawlers/requirements.txt
       - name: Install dependencies
         working-directory: crawlers
+        run: pip install --upgrade pip && pip install -r requirements.txt
+      - name: Install Playwright browsers
+        working-directory: crawlers
         run: |
-          pip install --upgrade pip && pip install -r requirements.txt
-          python -m playwright install chromium --with-deps
+          python -m playwright install chromium --with-deps || \
+          (sleep 30 && python -m playwright install chromium --with-deps)
       - name: Run news crawler
         working-directory: crawlers
         env:
@@ -129,9 +134,12 @@ jobs:
           cache-dependency-path: crawlers/requirements.txt
       - name: Install dependencies
         working-directory: crawlers
+        run: pip install --upgrade pip && pip install -r requirements.txt
+      - name: Install Playwright browsers
+        working-directory: crawlers
         run: |
-          pip install --upgrade pip && pip install -r requirements.txt
-          python -m playwright install chromium --with-deps
+          python -m playwright install chromium --with-deps || \
+          (sleep 30 && python -m playwright install chromium --with-deps)
       - name: Run merch crawler
         working-directory: crawlers
         env:
@@ -160,9 +168,12 @@ jobs:
           cache-dependency-path: crawlers/requirements.txt
       - name: Install dependencies
         working-directory: crawlers
+        run: pip install --upgrade pip && pip install -r requirements.txt
+      - name: Install Playwright browsers
+        working-directory: crawlers
         run: |
-          pip install --upgrade pip && pip install -r requirements.txt
-          python -m playwright install chromium --with-deps
+          python -m playwright install chromium --with-deps || \
+          (sleep 30 && python -m playwright install chromium --with-deps)
       - name: Run videos crawler
         working-directory: crawlers
         env:
@@ -189,9 +200,12 @@ jobs:
           cache-dependency-path: crawlers/requirements.txt
       - name: Install dependencies
         working-directory: crawlers
+        run: pip install --upgrade pip && pip install -r requirements.txt
+      - name: Install Playwright browsers
+        working-directory: crawlers
         run: |
-          pip install --upgrade pip && pip install -r requirements.txt
-          python -m playwright install chromium --with-deps
+          python -m playwright install chromium --with-deps || \
+          (sleep 30 && python -m playwright install chromium --with-deps)
       - name: Run gallery crawler
         working-directory: crawlers
         env:

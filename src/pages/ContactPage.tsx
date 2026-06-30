@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Send, Mail, MessageSquare, CheckCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { sendContactNotify, sendContactAutoReply } from '../lib/email'
 import toast from 'react-hot-toast'
 import Button from '../components/ui/Button'
 
@@ -29,12 +30,26 @@ export default function ContactPage() {
     })
 
     setLoading(false)
+
     if (error) {
       toast.error('Something went wrong. Please try again.')
-    } else {
-      setDone(true)
-      toast.success('Message sent!')
+      return
     }
+
+    setDone(true)
+    toast.success('Message sent!')
+
+    // Send emails non-blocking — DB record is already saved above
+    Promise.all([
+      sendContactNotify(
+        form.name.trim(),
+        form.email.trim().toLowerCase(),
+        form.subject.trim(),
+        form.message.trim(),
+        form.inquiry_type,
+      ),
+      sendContactAutoReply(form.name.trim(), form.email.trim().toLowerCase()),
+    ]).catch(err => console.error('[contact] email error:', err))
   }
 
   const inputClass = "w-full bg-dark-700 gold-border rounded-sm px-4 py-3 text-cream placeholder-cream/30 focus:outline-none focus:border-gold-400/60 transition-colors text-sm"

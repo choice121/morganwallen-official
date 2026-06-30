@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Mail, Send, CheckCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { sendNewsletterConfirm } from '../../lib/email'
 import toast from 'react-hot-toast'
 import Button from '../ui/Button'
 
@@ -28,10 +29,15 @@ export default function NewsletterSection() {
       } else {
         toast.error('Something went wrong. Please try again.')
       }
-    } else {
-      setDone(true)
-      toast.success('You\'re in! Check your inbox for a confirmation email.')
+      return
     }
+
+    setDone(true)
+    toast.success("You're in! Check your inbox for a confirmation email.")
+
+    // Send confirmation email non-blocking — subscriber row is already saved
+    sendNewsletterConfirm(email.trim().toLowerCase(), firstName.trim() || undefined)
+      .catch(err => console.error('[newsletter] email error:', err))
   }
 
   return (

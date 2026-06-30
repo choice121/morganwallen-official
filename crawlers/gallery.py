@@ -43,6 +43,9 @@ NS = {
 LIVE_KEYWORDS = ["live", "concert", "performance", "tour", "stadium", "arena", "show"]
 BACKSTAGE_KEYWORDS = ["behind", "studio", "session", "vlog", "bts", "making", "diary", "day in"]
 
+# Minimum acceptable file size for press photos (skip tiny error/placeholder images)
+MIN_PRESS_PHOTO_BYTES = 15_000  # 15KB
+
 
 def _infer_photo_category(title: str) -> str:
     t = title.lower()
@@ -50,7 +53,7 @@ def _infer_photo_category(title: str) -> str:
         return "backstage"
     if any(k in t for k in LIVE_KEYWORDS):
         return "live"
-    return "live"   # default for video thumbnails
+    return "live"
 
 
 async def _fetch_rss_videos(client: httpx.AsyncClient) -> list[dict]:
@@ -101,7 +104,6 @@ async def _crawl_channel_video_ids() -> list[str]:
             except Exception as exc:
                 logger.warning("Channel page crawl failed for %s: %s", handle_url, exc)
 
-    # Deduplicate
     seen: set[str] = set()
     unique: list[str] = []
     for vid in ids:
@@ -124,10 +126,8 @@ async def _process_thumbnail(
     file_name = f"gallery-yt-{video_id}.jpg"
     category = _infer_photo_category(title)
 
-    # Try to upload to ImageKit; fall back to storing URL directly
     path = await upload_image(thumb_url, file_name, f"/gallery/{category}")
     if not path:
-        # Store the YouTube thumbnail URL directly in the imagekit_path field
         path = thumb_url
 
     return {
@@ -150,55 +150,73 @@ PRESS_SOURCES = [
     },
 ]
 
+
 async def _crawl_press_photos() -> list[dict]:
     """Crawl official website for press/promotional photos."""
     photos: list[dict] = []
     browser_config = BrowserConfig(headless=True, verbose=False)
-    async with AsyncWebCrawler(config=browser_config) as crawler:
-        for source in PRESS_SOURCES:
-            try:
-                result = await crawler.arun(
-                    url=source["url"],
-                    config=CrawlerRunConfig(
-                        cache_mode=CacheMode.BYPASS,
-                        page_timeout=20000,
-                    ),
-                )
-                if not result.success:
-                    continue
 
-                # Extract image URLs from HTML
-                img_urls = re.findall(
-                    r'(?:src|data-src)=["\']([^"\']+\.(?:jpg|jpeg|png|webp)[^"\']*)["\']',
-                    result.html or "",
-                    re.IGNORECASE,
-                )
-                # Filter for large/meaningful images
-                meaningful = [
-                    u for u in img_urls
-                    if not any(skip in u.lower() for skip in ["icon", "logo", "favicon", "sprite", "pixel", "1x1"])
-                    and len(u) > 30
-                ]
-
-                for idx, img_url in enumerate(meaningful[:20]):
-                    if img_url.startswith("//"):
-                        img_url = "https:" + img_url
-                    if not img_url.startswith("http"):
+    async with httpx.AsyncClient(timeout=30, follow_redirects=True) as http_client:
+        async with AsyncWebCrawler(config=browser_config) as crawler:
+            for source in PRESS_SOURCES:
+                try:
+                    result = await crawler.arun(
+                        url=source["url"],
+                        config=CrawlerRunConfig(
+                            cache_mode=CacheMode.BYPASS,
+                            page_timeout=20000,
+                        ),
+                    )
+                    if not result.success:
+                        logger.warning("Press crawl: page fetch failed for %s", source["url"])
                         continue
-                    file_name = f"gallery-press-{source['category']}-{idx+1:03d}.jpg"
-                    path = await upload_image(img_url, file_name, f"/gallery/{source['category']}")
-                    if path:
-                        photos.append({
-                            "title": f"Morgan Wallen — {source['label']} Photo {idx+1}",
-                            "imagekit_path": path,
-                            "category": source["category"],
-                            "taken_at": None,
-                            "is_published": True,
-                            "sort_order": 1000 + idx,
-                        })
 
-            except Exception as exc:
-                logger.warning("Press crawl failed for %s: %s", source["url"], exc)
+                    img_urls = re.findall(
+                        r'(?:src|data-src)=["\']([^"\']+\.(?:jpg|jpeg|png|webp)[^"\']*)["\']',
+                        result.html or "",
+                        re.IGNORECASE,
+                    )
+                    meaningful = [
+                        u for u in img_urls
+                        if not any(skip in u.lower() for skip in ["icon", "logo", "favicon", "sprite", "pixel", "1x1"])
+                        and len(u) > 30
+                    ]
+
+                    uploaded = 0
+                    for idx, img_url in enumerate(meaningful[:25]):
+                        if img_url.startswith("//"):
+                            img_url = "https:" + img_url
+                        if not img_url.startswith("http"):
+                            continue
+
+                        # Pre-flight check: fetch image and validate minimum size
+                        try:
+                            head = await http_client.head(img_url, timeout=10)
+                            content_length = int(head.headers.get("content-length", 0))
+                            if content_length > 0 and content_length < MIN_PRESS_PHOTO_BYTES:
+                                logger.debug("Skipping tiny press image (%d bytes): %s", content_length, img_url)
+                                continue
+                        except Exception:
+                            pass  # If HEAD fails, proceed with upload attempt
+
+                        file_name = f"gallery-press-{source['category']}-{uploaded+1:03d}.jpg"
+                        path = await upload_image(img_url, file_name, f"/gallery/{source['category']}")
+                        if path:
+                            photos.append({
+                                "title": f"Morgan Wallen — {source['label']} Photo {uploaded + 1}",
+                                "imagekit_path": path,
+                                "category": source["category"],
+                                "taken_at": None,
+                                "is_published": True,
+                                "sort_order": 1000 + uploaded,
+                            })
+                            uploaded += 1
+                            if uploaded >= 20:
+                                break
+
+                except Exception as exc:
+                    logger.warning("Press crawl failed for %s: %s", source["url"], exc)
+
     return photos
 
 
@@ -209,27 +227,37 @@ async def run() -> dict:
     stats = {"gallery_photos": 0, "errors": []}
     records: list[dict] = []
 
+    # 1. RSS feed thumbnails
     async with httpx.AsyncClient(timeout=Config.REQUEST_TIMEOUT) as client:
-        # 1. Get videos from RSS (most reliable, 15 most recent)
         logger.info("Fetching RSS videos for gallery thumbnails…")
-        rss_videos = await _fetch_rss_videos(client)
-        logger.info("RSS returned %d videos", len(rss_videos))
+        try:
+            rss_videos = await _fetch_rss_videos(client)
+            logger.info("RSS returned %d videos", len(rss_videos))
+        except Exception as exc:
+            logger.warning("RSS fetch failed: %s", exc)
+            rss_videos = []
+            stats["errors"].append(f"RSS: {exc}")
 
-    # 2. Crawl channel page for more video IDs
+    # 2. Channel page crawl
     logger.info("Crawling channel page for additional videos…")
-    channel_ids = await _crawl_channel_video_ids()
+    try:
+        channel_ids = await _crawl_channel_video_ids()
+    except Exception as exc:
+        logger.warning("Channel crawl failed: %s", exc)
+        channel_ids = []
+        stats["errors"].append(f"Channel crawl: {exc}")
 
-    # Merge: RSS first (have titles), then extra IDs from page
+    # Merge: RSS first (have titles), then extra IDs
     all_videos: list[dict] = list(rss_videos)
     rss_id_set = {v["video_id"] for v in rss_videos}
     for vid_id in channel_ids:
         if vid_id not in rss_id_set:
-            all_videos.append({"video_id": vid_id, "title": f"Morgan Wallen — Live Performance"})
+            all_videos.append({"video_id": vid_id, "title": "Morgan Wallen — Live Performance"})
             rss_id_set.add(vid_id)
 
     logger.info("Processing %d total video thumbnails for gallery…", len(all_videos))
 
-    # 3. Process thumbnails (limit to 80 for gallery)
+    # 3. Process thumbnails (limit to 80)
     for idx, video in enumerate(all_videos[:80]):
         try:
             record = await _process_thumbnail(
@@ -240,21 +268,30 @@ async def run() -> dict:
         except Exception as exc:
             logger.warning("Thumbnail processing failed for %s: %s", video["video_id"], exc)
 
-        # Small delay to avoid hammering ImageKit
         if idx % 10 == 9:
             await asyncio.sleep(1)
 
     # 4. Press photos (if ImageKit available)
     if Config.IMAGEKIT_PRIVATE_KEY:
         logger.info("Crawling press/official photos…")
-        press = await _crawl_press_photos()
-        records.extend(press)
-        logger.info("Added %d press photos", len(press))
+        try:
+            press = await _crawl_press_photos()
+            records.extend(press)
+            logger.info("Added %d press photos", len(press))
+        except Exception as exc:
+            logger.warning("Press photo crawl failed: %s", exc)
+            stats["errors"].append(f"Press: {exc}")
+    else:
+        logger.info("Skipping press photos — no IMAGEKIT_PRIVATE_KEY")
 
     # 5. Upsert
     if records:
-        upserted = await db.upsert("gallery_photos", records, on_conflict="imagekit_path")
-        stats["gallery_photos"] = len(upserted)
+        try:
+            upserted = await db.upsert("gallery_photos", records, on_conflict="imagekit_path")
+            stats["gallery_photos"] = len(upserted)
+        except Exception as exc:
+            logger.error("Upsert failed: %s", exc)
+            stats["errors"].append(f"Upsert: {exc}")
 
     logger.info("Gallery done: %d photos upserted", stats["gallery_photos"])
     return stats

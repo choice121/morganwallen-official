@@ -2,11 +2,12 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-site-secret',
 }
 
 const GMAIL = Deno.env.get('GMAIL_ADDRESS') ?? ''
 const GMAIL_PASS = Deno.env.get('GMAIL_APP_PASSWORD') ?? ''
+const SITE_CALL_SECRET = Deno.env.get('SITE_CALL_SECRET') ?? ''
 const SITE_URL = 'https://morganwallenofficial.pages.dev'
 const GOLD = '#C9A84C'
 const DARK = '#0A0A0A'
@@ -14,7 +15,7 @@ const BG = '#111111'
 const CREAM_DIM = '#888880'
 const BORDER = '#1E1E1E'
 
-function wrap(preheader, body) {
+function wrap(preheader: string, body: string) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head>
@@ -33,7 +34,7 @@ function wrap(preheader, body) {
       <tr><td style="padding:28px 40px;text-align:center;">
         <p style="margin:0 0 6px;font-size:10px;color:#333;letter-spacing:4px;text-transform:uppercase;">Morgan Wallen Official</p>
         <p style="margin:0 0 4px;font-size:11px;"><a href="${SITE_URL}" style="color:#444;text-decoration:none;">morganwallen.com</a></p>
-        <p style="margin:8px 0 0;font-size:10px;color:#222;">&#169; 2025 Morgan Wallen. All rights reserved.</p>
+        <p style="margin:8px 0 0;font-size:10px;color:#222;">&#169; 2026 Morgan Wallen. All rights reserved.</p>
       </td></tr>
     </table>
   </td></tr>
@@ -42,24 +43,25 @@ function wrap(preheader, body) {
 </html>`
 }
 
-function goldBtn(label, href) {
+function goldBtn(label: string, href: string) {
   return `<table cellpadding="0" cellspacing="0" border="0"><tr><td style="background:${GOLD};"><a href="${href}" style="display:inline-block;color:${DARK};padding:14px 36px;text-decoration:none;font-size:11px;letter-spacing:4px;text-transform:uppercase;font-weight:700;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">${label}</a></td></tr></table>`
 }
 
-function heading(text) {
+function heading(text: string) {
   return `<h2 style="margin:0 0 6px;font-family:Georgia,serif;font-size:28px;color:#F5F0E8;font-weight:400;line-height:1.2;">${text}</h2>`
 }
 
-function eyebrow(text) {
+function eyebrow(text: string) {
   return `<p style="margin:0 0 32px;font-size:11px;color:${GOLD};letter-spacing:4px;text-transform:uppercase;">${text}</p>`
 }
 
-function para(text, mb) {
+function para(text: string, mb?: string) {
   return `<p style="margin:0 0 ${mb || '20px'};font-size:15px;color:${CREAM_DIM};line-height:1.8;">${text}</p>`
 }
 
-// Templates
-function tplNewsletterConfirm(name) {
+// ── Email Templates ───────────────────────────────────────────────────────────
+
+function tplNewsletterConfirm(name: string) {
   const first = (name || '').split(' ')[0] || 'Friend'
   const body = heading("You're on the list.") +
     eyebrow('Welcome to the fan club') +
@@ -74,7 +76,7 @@ function tplNewsletterConfirm(name) {
   }
 }
 
-function tplWelcome(name) {
+function tplWelcome(name: string) {
   const first = (name || '').split(' ')[0] || 'there'
   const body = heading('Welcome to the fan hub.') +
     eyebrow('Your account is ready') +
@@ -88,7 +90,7 @@ function tplWelcome(name) {
   }
 }
 
-function tplContactNotify(name, email, subj, msg, type) {
+function tplContactNotify(name: string, email: string, subj: string, msg: string, type: string) {
   const rows = [
     ['From', name || 'Anonymous'],
     ['Email', '<a href="mailto:' + email + '" style="color:' + GOLD + ';">' + email + '</a>'],
@@ -110,7 +112,7 @@ function tplContactNotify(name, email, subj, msg, type) {
   }
 }
 
-function tplContactAutoReply(name) {
+function tplContactAutoReply(name: string) {
   const first = (name || '').split(' ')[0] || 'there'
   const body = heading('Message received.') +
     eyebrow("We'll be in touch") +
@@ -124,8 +126,24 @@ function tplContactAutoReply(name) {
   }
 }
 
+// ── Request handler ───────────────────────────────────────────────────────────
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+
+  // ── Secret check ─────────────────────────────────────────────────────────
+  // If SITE_CALL_SECRET is configured, require callers to pass the matching
+  // x-site-secret header. This prevents unauthenticated abuse of the function.
+  if (SITE_CALL_SECRET) {
+    const provided = req.headers.get('x-site-secret') ?? ''
+    if (provided !== SITE_CALL_SECRET) {
+      console.warn('[send-email] Rejected: bad or missing x-site-secret')
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+  }
 
   try {
     const payload = await req.json()
@@ -136,7 +154,7 @@ serve(async (req) => {
     const msg = payload.message || payload.contactMessage || ''
     const contactType = payload.contactType || 'general'
 
-    let tpl
+    let tpl: { subject: string; html: string }
     let recipient = toAddr
 
     if (type === 'newsletter_confirm') {

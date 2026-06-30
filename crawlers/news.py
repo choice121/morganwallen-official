@@ -16,7 +16,7 @@ import asyncio
 import hashlib
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
@@ -44,7 +44,7 @@ SOURCES = [
                 {"name": "url", "selector": "a", "type": "attribute", "attribute": "href"},
                 {"name": "excerpt", "selector": "p, .excerpt, .article-excerpt", "type": "text"},
                 {"name": "image", "selector": "img", "type": "attribute", "attribute": "src"},
-                {"name": "date", "selector": "time, .date, .published", "type": "text"},
+                {"name": "date", "selector": "time, .date, .published, [datetime]", "type": "attribute", "attribute": "datetime"},
             ],
         },
         "category": "news",
@@ -61,7 +61,7 @@ SOURCES = [
                 {"name": "url", "selector": "a", "type": "attribute", "attribute": "href"},
                 {"name": "excerpt", "selector": "p, .entry-summary", "type": "text"},
                 {"name": "image", "selector": "img", "type": "attribute", "attribute": "src"},
-                {"name": "date", "selector": "time, .entry-date", "type": "text"},
+                {"name": "date", "selector": "time, .entry-date, [datetime]", "type": "attribute", "attribute": "datetime"},
             ],
         },
         "category": "news",
@@ -78,7 +78,7 @@ SOURCES = [
                 {"name": "url", "selector": "a", "type": "attribute", "attribute": "href"},
                 {"name": "excerpt", "selector": "p, .c-dek", "type": "text"},
                 {"name": "image", "selector": "img", "type": "attribute", "attribute": "src"},
-                {"name": "date", "selector": "time, .c-timestamp", "type": "text"},
+                {"name": "date", "selector": "time, .c-timestamp, [datetime]", "type": "attribute", "attribute": "datetime"},
             ],
         },
         "category": "news",
@@ -95,13 +95,83 @@ SOURCES = [
                 {"name": "url", "selector": "a", "type": "attribute", "attribute": "href"},
                 {"name": "excerpt", "selector": "p, .article__description", "type": "text"},
                 {"name": "image", "selector": "img", "type": "attribute", "attribute": "src"},
-                {"name": "date", "selector": "time, .article__timestamp", "type": "text"},
+                {"name": "date", "selector": "time, .article__timestamp, [datetime]", "type": "attribute", "attribute": "datetime"},
             ],
         },
         "category": "news",
         "domain": "billboard.com",
     },
 ]
+
+
+# ── Date parsing ───────────────────────────────────────────────────────────────
+
+# Extra formats news sites commonly emit in <time datetime="...">
+_DATE_FORMATS = [
+    "%Y-%m-%dT%H:%M:%S%z",
+    "%Y-%m-%dT%H:%M:%SZ",
+    "%Y-%m-%dT%H:%M:%S",
+    "%Y-%m-%dT%H:%MZ",
+    "%Y-%m-%d",
+    "%B %d, %Y",
+    "%b %d, %Y",
+    "%b. %d, %Y",
+    "%d %B %Y",
+    "%B %Y",
+]
+
+
+def _parse_article_date(raw: str | None) -> str | None:
+    """
+    Parse a date string from a news article into ISO YYYY-MM-DD.
+    Handles ISO 8601, US formats, and short relative strings.
+    Returns None if nothing matches.
+    """
+    if not raw:
+        return None
+    raw = raw.strip()
+
+    # Quick check: already YYYY-MM-DD
+    if re.match(r"^\d{4}-\d{2}-\d{2}$", raw):
+        return raw
+
+    for fmt in _DATE_FORMATS:
+        try:
+            dt = datetime.strptime(raw[:len(fmt) + 6], fmt)
+            return dt.strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+
+    # Regex fallback: grab YYYY-MM-DD from any ISO-ish string
+    m = re.search(r"(\d{4}-\d{2}-\d{2})", raw)
+    if m:
+        return m.group(1)
+
+    # "X hours/days ago" — not precise enough to store
+    return None
+
+
+def _extract_date_from_markdown(markdown: str) -> str | None:
+    """
+    Scan article markdown for a date. Looks for ISO dates and common patterns.
+    """
+    # ISO date in text
+    m = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", markdown)
+    if m:
+        return m.group(1)
+    # "Month DD, YYYY" pattern
+    m = re.search(
+        r"\b(January|February|March|April|May|June|July|August|September|October|November|December)"
+        r"\s+(\d{1,2}),?\s+(\d{4})\b",
+        markdown
+    )
+    if m:
+        try:
+            dt = datetime.strptime(f"{m.group(1)} {m.group(2)} {m.group(3)}", "%B %d %Y")
+            return dt.strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+    return None
 
 
 # ── Category inference ─────────────────────────────────────────────────────────
@@ -134,10 +204,6 @@ def _normalize_url(url: str, domain: str) -> str | None:
 
 
 def _parse_listing_markdown(markdown: str, domain: str) -> list[dict]:
-    """
-    Fallback: extract article links from raw markdown if CSS extraction fails.
-    Finds lines that look like [Title](URL) where URL belongs to the domain.
-    """
     links = []
     pattern = re.compile(r"\[([^\]]{10,200})\]\((https?://[^\)]+)\)")
     for m in pattern.finditer(markdown):
@@ -161,12 +227,12 @@ async def _crawl_article(crawler: AsyncWebCrawler, url: str) -> dict | None:
         )
         if not result.success:
             return None
-        # Extract content from markdown
         md = result.markdown or ""
-        # Remove navigation-like lines (very short lines)
         lines = [l for l in md.split("\n") if len(l.strip()) > 30]
         content = "\n\n".join(lines)[:MAX_CONTENT_LENGTH]
-        return {"content": content, "markdown": md}
+        # Try to extract a date from the article body
+        date_from_body = _extract_date_from_markdown(md)
+        return {"content": content, "markdown": md, "date_from_body": date_from_body}
     except Exception as exc:
         logger.warning("Article crawl failed for %s: %s", url, exc)
         return None
@@ -184,7 +250,6 @@ async def run() -> dict:
         for source in SOURCES:
             logger.info("Crawling %s…", source["name"])
             try:
-                # Crawl listing page
                 strategy = JsonCssExtractionStrategy(source["listing_schema"], verbose=False)
                 listing_result = await crawler.arun(
                     url=source["url"],
@@ -205,7 +270,6 @@ async def run() -> dict:
                     except Exception:
                         pass
 
-                # Fallback to markdown parsing
                 if not articles and listing_result.markdown:
                     articles = _parse_listing_markdown(listing_result.markdown, source["domain"])
 
@@ -218,14 +282,19 @@ async def run() -> dict:
                     if not url or not title or len(title) < 5:
                         continue
 
-                    # Include URL hash in slug to prevent cross-source title collisions
                     url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
                     slug = slugify(title)[:80] + "-" + url_hash
                     excerpt = truncate((article.get("excerpt") or "").strip(), 280)
 
-                    # Crawl full article content
+                    # Crawl full article for content + date extraction
                     full = await _crawl_article(crawler, url)
                     content = full["content"] if full else excerpt
+
+                    # Parse published_at: try listing date first, then body
+                    raw_date = article.get("date") or ""
+                    published_at = _parse_article_date(raw_date)
+                    if not published_at and full and full.get("date_from_body"):
+                        published_at = full["date_from_body"]
 
                     records.append({
                         "title": title,
@@ -235,7 +304,7 @@ async def run() -> dict:
                         "cover_image": article.get("image") or None,
                         "category": _infer_category(title),
                         "is_published": True,
-                        "published_at": article.get("date") or None,
+                        "published_at": published_at,
                     })
 
                     await asyncio.sleep(Config.CRAWL_DELAY)

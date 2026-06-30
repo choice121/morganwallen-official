@@ -22,7 +22,7 @@ class Config:
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://yxspomuwawzsnsjpqxid.supabase.co")
     SUPABASE_SERVICE_KEY: str = os.getenv("SUPABASE_SERVICE_KEY", "")
 
-    # ── ImageKit (OPTIONAL — gallery still works without it) ──────────────────
+    # ── ImageKit (OPTIONAL — gallery/albums still work without it) ────────────
     IMAGEKIT_PRIVATE_KEY: str = os.getenv("IMAGEKIT_PRIVATE_KEY", "")
     IMAGEKIT_PUBLIC_KEY: str = os.getenv("IMAGEKIT_PUBLIC_KEY", "")
     IMAGEKIT_URL_ENDPOINT: str = "https://ik.imagekit.io/Morganwallen"

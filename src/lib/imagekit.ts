@@ -27,12 +27,20 @@ export function ikCard(path: string): string {
   return ikUrl(path, 'w-800,h-600,fo-auto,q-80')
 }
 
+// Real images from ImageKit — used as fallbacks when Supabase data has no image
 export const PLACEHOLDER_IMAGES = {
-  album: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&h=600&fit=crop&auto=format',
-  hero: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1920&h=1080&fit=crop&auto=format',
-  news: 'https://images.unsplash.com/photo-1501386761578-eaa54b620fe8?w=800&h=600&fit=crop&auto=format',
-  merch: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&h=600&fit=crop&auto=format',
-  gallery: 'https://images.unsplash.com/photo-1468359601543-843bfaef291a?w=800&h=600&fit=crop&auto=format',
-  video: 'https://images.unsplash.com/photo-1598387993441-a364f854cfbf?w=800&h=450&fit=crop&auto=format',
-  avatar: 'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?w=200&h=200&fit=crop&auto=format',
+  // Dangerous album cover (most iconic) — stored in /albums/
+  album: ikSquare('/albums/dangerous-album_bMMbSSaOJ.jpg', 600),
+  // Press photo from official site crawl
+  hero: ikHero('/gallery/press/gallery-press-press-001.jpg'),
+  // Second press photo
+  news: ikCard('/gallery/press/gallery-press-press-002.jpg'),
+  // Concert stage photo
+  merch: ikSquare('/photos/concert-stage_-8J_E290B.jpg', 600),
+  // Live performance thumbnail
+  gallery: ikCard('/gallery/live/gallery-yt-mgukVsbihaQ.jpg'),
+  // Music video thumbnail
+  video: ikCard('/gallery/live/gallery-yt-pCv0oP9JLKw.jpg'),
+  // Generic concert crowd for avatar fallback
+  avatar: ikSquare('/photos/microphone_gxXBS-LVN.jpg', 200),
 }
