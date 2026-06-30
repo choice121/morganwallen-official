@@ -37,9 +37,10 @@ export default function NewsSection() {
             >
               <div className={`relative overflow-hidden ${i === 0 ? 'aspect-video' : 'aspect-[4/3]'}`}>
                 <img
-                  src={PLACEHOLDER_IMAGES.news}
+                  src={post?.cover_image || PLACEHOLDER_IMAGES.news}
                   alt={post?.title ?? 'News'}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.news }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-dark-900/90 to-transparent" />
                 {post && (

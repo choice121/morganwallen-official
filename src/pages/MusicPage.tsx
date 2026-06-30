@@ -74,9 +74,10 @@ export default function MusicPage() {
                   <div className="md:col-span-1">
                     <div className="relative aspect-square rounded-sm overflow-hidden shadow-card group">
                       <img
-                        src={PLACEHOLDER_IMAGES.album}
+                        src={album.cover_image || PLACEHOLDER_IMAGES.album}
                         alt={album.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.album }}
                       />
                       {i === 0 && (
                         <div className="absolute top-3 left-3 bg-gold-500 text-dark-900 text-xs font-display uppercase tracking-widest px-2 py-1 font-bold">
@@ -126,7 +127,7 @@ export default function MusicPage() {
                       >
                         {tracks[album.id].length === 0 ? (
                           <p className="text-cream/40 text-sm italic py-4">
-                            Tracklist will be updated soon. Replace this by adding tracks in your admin panel.
+                            No tracks found for this release.
                           </p>
                         ) : tracks[album.id].map((track) => (
                           <div key={track.id} className="flex items-center gap-4 py-2 px-3 hover:bg-dark-700 rounded transition-colors group/track">

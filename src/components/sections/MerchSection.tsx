@@ -6,12 +6,6 @@ import { supabase, MerchItem } from '../../lib/supabase'
 import { PLACEHOLDER_IMAGES } from '../../lib/imagekit'
 import SectionHeader from '../ui/SectionHeader'
 
-const MERCH_IMGS = [
-  'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=600&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=600&h=600&fit=crop&auto=format',
-]
-
 export default function MerchSection() {
   const [items, setItems] = useState<MerchItem[]>([])
 
@@ -19,8 +13,8 @@ export default function MerchSection() {
     supabase
       .from('merch_items')
       .select('*')
-      .eq('is_featured', true)
-      .eq('is_available', true)
+      .eq('is_available', true)   // removed is_featured filter — show all available items
+      .order('created_at', { ascending: false })
       .limit(3)
       .then(({ data }) => { if (data) setItems(data as MerchItem[]) })
   }, [])
@@ -42,9 +36,10 @@ export default function MerchSection() {
             >
               <div className="aspect-square overflow-hidden relative">
                 <img
-                  src={MERCH_IMGS[i % MERCH_IMGS.length]}
+                  src={item?.image || PLACEHOLDER_IMAGES.merch}
                   alt={item?.name ?? 'Merch'}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.merch }}
                 />
                 {item && (
                   <div className="absolute inset-0 bg-dark-900/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">

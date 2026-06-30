@@ -2,18 +2,9 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase, GalleryPhoto } from '../lib/supabase'
+import { ikUrl, ikHero, PLACEHOLDER_IMAGES } from '../lib/imagekit'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 
-const UNSPLASH = [
-  'https://images.unsplash.com/photo-1501386761578-eaa54b620fe8?w=800&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1468359601543-843bfaef291a?w=800&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1598387993441-a364f854cfbf?w=800&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?w=800&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=600&fit=crop&auto=format',
-]
 const CATEGORIES = ['all', 'live', 'studio', 'backstage', 'fans', 'press']
 
 export default function GalleryPage() {
@@ -85,9 +76,10 @@ export default function GalleryPage() {
                   style={{ aspectRatio: i % 7 === 0 ? '1/1' : '4/3' }}
                 >
                   <img
-                    src={UNSPLASH[i % UNSPLASH.length]}
+                    src={photo ? ikUrl(photo.imagekit_path) : PLACEHOLDER_IMAGES.gallery}
                     alt={photo?.title ?? ''}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.gallery }}
                   />
                   <div className="absolute inset-0 bg-dark-900/0 group-hover:bg-dark-900/40 transition-colors duration-300 flex items-end p-3">
                     {photo?.title && (
@@ -103,7 +95,7 @@ export default function GalleryPage() {
 
       {/* Lightbox */}
       <AnimatePresence>
-        {lightbox !== null && (
+        {lightbox !== null && photos[lightbox] && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -116,11 +108,17 @@ export default function GalleryPage() {
               <ChevronLeft size={20} />
             </button>
             <img
-              src={UNSPLASH[lightbox % UNSPLASH.length]}
-              alt=""
+              src={ikHero(photos[lightbox].imagekit_path)}
+              alt={photos[lightbox].title ?? ''}
               className="max-w-full max-h-[80vh] object-contain rounded-sm shadow-gold-lg"
               onClick={e => e.stopPropagation()}
+              onError={(e) => { (e.target as HTMLImageElement).src = ikUrl(photos[lightbox!].imagekit_path) }}
             />
+            {photos[lightbox].title && (
+              <p className="absolute bottom-8 left-1/2 -translate-x-1/2 text-cream/70 text-sm font-display">
+                {photos[lightbox].title}
+              </p>
+            )}
             <button onClick={(e) => { e.stopPropagation(); next() }}
               className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-dark-700 border border-gold-500/20 flex items-center justify-center text-cream hover:text-gold-400 transition-colors z-10">
               <ChevronRight size={20} />

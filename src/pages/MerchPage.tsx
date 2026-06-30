@@ -2,16 +2,9 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ShoppingBag, ExternalLink, Tag } from 'lucide-react'
 import { supabase, MerchItem } from '../lib/supabase'
+import { PLACEHOLDER_IMAGES } from '../lib/imagekit'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 
-const MERCH_IMGS = [
-  'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=600&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=600&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?w=600&h=600&fit=crop&auto=format',
-]
 const MERCH_CATS = ['all', 'apparel', 'accessories', 'collectibles']
 
 export default function MerchPage() {
@@ -69,9 +62,10 @@ export default function MerchPage() {
                 >
                   <div className="aspect-square relative overflow-hidden">
                     <img
-                      src={MERCH_IMGS[i % MERCH_IMGS.length]}
+                      src={item.image || PLACEHOLDER_IMAGES.merch}
                       alt={item.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.merch }}
                     />
                     <div className="absolute inset-0 bg-dark-900/0 group-hover:bg-dark-900/60 transition-colors duration-300 flex items-center justify-center">
                       <a
@@ -110,6 +104,12 @@ export default function MerchPage() {
                   </div>
                 </motion.div>
               ))}
+              {items.length === 0 && (
+                <div className="col-span-3 text-center py-20 text-cream/40">
+                  <ShoppingBag size={48} className="mx-auto mb-4 opacity-30" />
+                  <p className="font-serif text-xl">No items in this category.</p>
+                </div>
+              )}
             </div>
           )}
         </div>

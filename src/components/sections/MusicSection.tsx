@@ -35,9 +35,10 @@ export default function MusicSection() {
             >
               <div className="aspect-square relative overflow-hidden">
                 <img
-                  src={PLACEHOLDER_IMAGES.album}
+                  src={album?.cover_image || PLACEHOLDER_IMAGES.album}
                   alt={album?.title ?? 'Album'}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.album }}
                 />
                 <div className="absolute inset-0 bg-dark-900/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                   <div className="w-16 h-16 rounded-full bg-gold-500 flex items-center justify-center shadow-gold">
