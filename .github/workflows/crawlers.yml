@@ -26,8 +26,8 @@ on:
           - gallery
 
 concurrency:
-  group: crawlers-${{ github.ref }}
-  cancel-in-progress: true
+  group: crawlers-${{ github.event.inputs.crawler || 'scheduled' }}-${{ github.ref }}
+  cancel-in-progress: false
 
 # ── Shared install step (composite would be cleaner but this is simpler) ──────
 # Each job installs deps independently on fresh Ubuntu runners.
