@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { LayoutDashboard, Newspaper, Calendar, Music, ShoppingBag, Image, Video, Mail, MessageSquare, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Newspaper, Calendar, Music, ShoppingBag, Image, Video, Mail, MessageSquare, Users, LogOut, Menu, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import DashboardOverview from '../components/admin/DashboardOverview'
@@ -13,19 +13,21 @@ import GalleryAdmin from '../components/admin/GalleryAdmin'
 import VideosAdmin from '../components/admin/VideosAdmin'
 import SubscribersAdmin from '../components/admin/SubscribersAdmin'
 import ContactAdmin from '../components/admin/ContactAdmin'
+import MembersAdmin from '../components/admin/MembersAdmin'
 
-type Tab = 'overview' | 'news' | 'tour' | 'albums' | 'merch' | 'gallery' | 'videos' | 'subscribers' | 'contact'
+type Tab = 'overview' | 'news' | 'tour' | 'albums' | 'merch' | 'gallery' | 'videos' | 'members' | 'subscribers' | 'contact'
 
 const NAV_ITEMS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'news', label: 'News', icon: Newspaper },
-  { id: 'tour', label: 'Tour', icon: Calendar },
-  { id: 'albums', label: 'Albums', icon: Music },
-  { id: 'merch', label: 'Merch', icon: ShoppingBag },
-  { id: 'gallery', label: 'Gallery', icon: Image },
-  { id: 'videos', label: 'Videos', icon: Video },
-  { id: 'subscribers', label: 'Subscribers', icon: Mail },
-  { id: 'contact', label: 'Contact', icon: MessageSquare },
+  { id: 'overview',     label: 'Overview',     icon: LayoutDashboard },
+  { id: 'news',         label: 'News',         icon: Newspaper },
+  { id: 'tour',         label: 'Tour',         icon: Calendar },
+  { id: 'albums',       label: 'Albums',       icon: Music },
+  { id: 'merch',        label: 'Merch',        icon: ShoppingBag },
+  { id: 'gallery',      label: 'Gallery',      icon: Image },
+  { id: 'videos',       label: 'Videos',       icon: Video },
+  { id: 'members',      label: 'Members',      icon: Users },
+  { id: 'subscribers',  label: 'Subscribers',  icon: Mail },
+  { id: 'contact',      label: 'Contact',      icon: MessageSquare },
 ]
 
 export default function AdminPage() {
@@ -61,15 +63,16 @@ export default function AdminPage() {
   }
 
   const CONTENT: Record<Tab, React.ReactNode> = {
-    overview: <DashboardOverview />,
-    news: <NewsAdmin />,
-    tour: <TourAdmin />,
-    albums: <AlbumsAdmin />,
-    merch: <MerchAdmin />,
-    gallery: <GalleryAdmin />,
-    videos: <VideosAdmin />,
+    overview:    <DashboardOverview />,
+    news:        <NewsAdmin />,
+    tour:        <TourAdmin />,
+    albums:      <AlbumsAdmin />,
+    merch:       <MerchAdmin />,
+    gallery:     <GalleryAdmin />,
+    videos:      <VideosAdmin />,
+    members:     <MembersAdmin />,
     subscribers: <SubscribersAdmin />,
-    contact: <ContactAdmin />,
+    contact:     <ContactAdmin />,
   }
 
   return (

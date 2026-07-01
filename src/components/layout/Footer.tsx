@@ -37,7 +37,7 @@ const footerLinks = {
     { label: 'Merch', href: '/merch' },
   ],
   Connect: [
-    { label: 'Fan Club', href: '/login' },
+    { label: 'Fan Club', href: '/join' },
     { label: 'Contact / Press', href: '/contact' },
     { label: 'Newsletter', href: '/#newsletter' },
   ],

@@ -27,6 +27,8 @@ export type Database = {
   }
 }
 
+export type MemberTier = 'fan' | 'vip'
+
 export type Profile = {
   id: string
   username: string | null
@@ -34,6 +36,9 @@ export type Profile = {
   avatar_url: string | null
   bio: string | null
   is_admin: boolean
+  tier: MemberTier
+  member_number: number | null
+  vip_since: string | null
   created_at: string
   updated_at: string
 }
@@ -76,6 +81,7 @@ export type TourDate = {
   ticket_url: string | null
   is_sold_out: boolean
   is_cancelled: boolean
+  is_vip_early_access: boolean
   created_at: string
 }
 
@@ -88,6 +94,7 @@ export type NewsPost = {
   cover_image: string | null
   category: string
   is_published: boolean
+  is_vip_only: boolean
   published_at: string | null
   created_at: string
   updated_at: string
@@ -113,6 +120,7 @@ export type GalleryPhoto = {
   category: string
   taken_at: string | null
   is_published: boolean
+  is_vip_only: boolean
   sort_order: number
   created_at: string
 }
@@ -127,6 +135,7 @@ export type Video = {
   category: string
   duration_seconds: number | null
   is_published: boolean
+  is_vip_only: boolean
   published_at: string
   created_at: string
 }
