@@ -3,12 +3,10 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ChevronDown, Play } from 'lucide-react'
 
-const IK = 'https://ik.imagekit.io/Morganwallen/tr:w-1920,h-1080,fo-auto,q-85'
-
 const HERO_IMAGES = [
-  `${IK}/gallery/press/gallery-press-press-001.jpg`,
-  `${IK}/gallery/press/gallery-press-press-002.jpg`,
-  `${IK}/gallery/live/gallery-yt-mgukVsbihaQ.jpg`,
+  'https://images.unsplash.com/photo-1501386761578-eaa54b620fe8?w=1920&h=1080&fit=crop&auto=format&q=85',
+  'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1920&h=1080&fit=crop&auto=format&q=85',
+  'https://images.unsplash.com/photo-1468359601543-843bfaef291a?w=1920&h=1080&fit=crop&auto=format&q=85',
 ]
 
 export default function Hero() {
@@ -43,6 +41,9 @@ export default function Hero() {
             alt=""
             className="w-full h-full object-cover object-center scale-105"
             style={{ transform: i === current ? 'scale(1.05)' : 'scale(1)', transition: 'transform 8s ease-out' }}
+            loading={i === 0 ? 'eager' : 'lazy'}
+            fetchPriority={i === 0 ? 'high' : 'low'}
+            decoding={i === 0 ? 'sync' : 'async'}
           />
         </div>
       ))}
