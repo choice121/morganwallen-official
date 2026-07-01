@@ -46,7 +46,7 @@ export default function LoginPage() {
       if (!fullName.trim()) { toast.error('Please enter your name'); setLoading(false); return }
       const { error } = await signUp(email, password, fullName)
       if (error) { toast.error(error.message || 'Sign up failed'); setLoading(false) }
-      else { toast.success('Account created! Check your email to confirm.'); setLoading(false) }
+      else { toast.success('Welcome to the fan club! 🤠'); navigate('/account') }
     }
   }
 
