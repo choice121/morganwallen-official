@@ -1,0 +1,7 @@
+{
+  "name": "Morgan Wallen — Official",
+  "description": "Official website of Morgan Wallen — Country Music Artist. Music, tour dates, merch, videos, and more.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

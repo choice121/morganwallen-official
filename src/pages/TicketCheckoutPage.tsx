@@ -6,6 +6,7 @@ import { supabase, TourDate, TicketOrder } from '../lib/supabase'
 import { getTourDateById } from '../lib/dataService'
 import { useAuth } from '../hooks/useAuth'
 import { format } from 'date-fns'
+import toast from 'react-hot-toast'
 
 const TICKET_TYPES = [
   {
@@ -108,7 +109,7 @@ export default function TicketCheckoutPage() {
     if (error || !data) {
       setStep('details')
       setSubmitting(false)
-      alert('Something went wrong. Please try again.')
+      toast.error('Something went wrong. Please try again.')
       return
     }
 

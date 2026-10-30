@@ -18,6 +18,11 @@ interface EmailPayload {
 }
 
 async function callEmailFn(payload: EmailPayload): Promise<void> {
+  if (!SUPABASE_URL || !SUPABASE_URL.startsWith('http')) {
+    // Non-fatal — in preview/dev without edge function, just log simulated email
+    console.info('[email] Simulated email in preview:', payload.type, payload.to)
+    return
+  }
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }

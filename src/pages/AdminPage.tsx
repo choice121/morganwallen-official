@@ -45,7 +45,7 @@ export default function AdminPage() {
       .select('is_admin')
       .eq('id', user.id)
       .single()
-      .then(({ data }) => setIsAdmin(data?.is_admin ?? false))
+      .then(({ data }: any) => setIsAdmin(data?.is_admin ?? false))
   }, [user])
 
   if (loading || isAdmin === null) {

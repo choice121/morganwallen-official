@@ -27,10 +27,10 @@ export default function OrderConfirmationPage() {
 
   useEffect(() => {
     if (!id) return
-    supabase.from('ticket_orders').select('*').eq('id', id).single().then(async ({ data }) => {
+    supabase.from('ticket_orders').select('*').eq('id', id).single().then(async ({ data }: any) => {
       if (!data) { setLoading(false); return }
       const o = data as TicketOrder
-      const { data: show } = await supabase.from('tour_dates').select('*').eq('id', o.tour_date_id).single()
+      const { data: show }: any = await supabase.from('tour_dates').select('*').eq('id', o.tour_date_id).single()
       setOrder({ ...o, show: show as TourDate | undefined })
       setLoading(false)
     })

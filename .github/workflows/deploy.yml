@@ -29,7 +29,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_IMAGEKIT_URL: ${{ secrets.VITE_IMAGEKIT_URL }}
           VITE_IMAGEKIT_PUBLIC_KEY: ${{ secrets.VITE_IMAGEKIT_PUBLIC_KEY }}
-          VITE_SITE_URL: https://rileygreen-official.pages.dev
+          VITE_SITE_URL: https://morganwallen-official.pages.dev
           VITE_CONTACT_EMAIL: choicepropertyofficial1@gmail.com
         run: npm run build
 
@@ -38,4 +38,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=rileygreen-official --branch=main
+          command: pages deploy dist --project-name=morganwallen-official --branch=main

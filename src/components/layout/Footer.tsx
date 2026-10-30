@@ -43,7 +43,7 @@ const footerLinks = {
   ],
 }
 
-type SocialIcon = React.ComponentType<{ size?: number }>
+type SocialIcon = React.ElementType
 
 const socials: { icon: SocialIcon; href: string; label: string }[] = [
   { icon: FacebookIcon,     href: 'https://facebook.com/MorganWallen',                              label: 'Facebook' },
