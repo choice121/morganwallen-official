@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Play, Music, ExternalLink } from 'lucide-react'
-import { supabase, Album, Track } from '../lib/supabase'
+import { Album, Track } from '../lib/supabase'
+import { getAlbums, getAlbumTracks } from '../lib/dataService'
 import { ikUrl, PLACEHOLDER_IMAGES } from '../lib/imagekit'
 import { format } from 'date-fns'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
@@ -13,24 +14,10 @@ export default function MusicPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase
-      .from('albums')
-      .select('*')
-      .eq('is_published', true)
-      .order('release_date', { ascending: false })
-      .then(({ data }) => {
-        if (data) {
-          // Deduplicate: keep first occurrence of each slug (newest crawl wins)
-          const seen = new Set<string>()
-          const unique = (data as Album[]).filter(a => {
-            if (seen.has(a.slug)) return false
-            seen.add(a.slug)
-            return true
-          })
-          setAlbums(unique)
-        }
-        setLoading(false)
-      })
+    getAlbums().then((data) => {
+      setAlbums(data)
+      setLoading(false)
+    })
   }, [])
 
   async function loadTracks(albumId: string) {
@@ -38,12 +25,8 @@ export default function MusicPage() {
       setExpanded(expanded === albumId ? null : albumId)
       return
     }
-    const { data } = await supabase
-      .from('tracks')
-      .select('*')
-      .eq('album_id', albumId)
-      .order('track_number', { ascending: true })
-    if (data) setTracks(prev => ({ ...prev, [albumId]: data as Track[] }))
+    const data = await getAlbumTracks(albumId)
+    setTracks(prev => ({ ...prev, [albumId]: data }))
     setExpanded(albumId)
   }
 
@@ -95,20 +78,21 @@ export default function MusicPage() {
                         </div>
                       )}
                     </div>
+
                     <div className="mt-4 flex gap-3">
-                      {album.spotify_url && !album.spotify_url.includes('placeholder') && (
+                      {album.spotify_url && (
                         <a href={album.spotify_url} target="_blank" rel="noreferrer"
                           className="flex items-center gap-2 text-xs text-cream/50 hover:text-green-400 transition-colors font-display uppercase tracking-wider">
                           <Music size={14} /> Spotify
                         </a>
                       )}
-                      {album.apple_music_url && !album.apple_music_url.includes('placeholder') && (
+                      {album.apple_music_url && (
                         <a href={album.apple_music_url} target="_blank" rel="noreferrer"
                           className="flex items-center gap-2 text-xs text-cream/50 hover:text-pink-400 transition-colors font-display uppercase tracking-wider">
                           <ExternalLink size={12} /> Apple Music
                         </a>
                       )}
-                      {album.youtube_url && !album.youtube_url.includes('deezer') && (
+                      {album.youtube_url && (
                         <a href={album.youtube_url} target="_blank" rel="noreferrer"
                           className="flex items-center gap-2 text-xs text-cream/50 hover:text-red-400 transition-colors font-display uppercase tracking-wider">
                           <ExternalLink size={12} /> YouTube
@@ -141,22 +125,12 @@ export default function MusicPage() {
                         animate={{ opacity: 1, height: 'auto' }}
                         className="mt-4 space-y-1 overflow-hidden"
                       >
-                        {tracks[album.id].length === 0 ? (
-                          <p className="text-cream/40 text-sm italic py-4">
-                            No tracks found for this release.
-                          </p>
-                        ) : tracks[album.id].map((track) => (
+                        {tracks[album.id].map((track) => (
                           <div key={track.id} className="flex items-center gap-4 py-2 px-3 hover:bg-dark-700 rounded transition-colors group/track">
                             <span className="w-6 text-center text-cream/30 text-sm group-hover/track:hidden">{track.track_number}</span>
                             <Play size={12} className="hidden group-hover/track:block text-gold-400 flex-shrink-0" fill="currentColor" />
                             <span className="flex-1 text-cream/80 text-sm group-hover/track:text-cream transition-colors">{track.title}</span>
                             <span className="text-cream/30 text-xs font-mono">{formatDuration(track.duration_seconds)}</span>
-                            {track.spotify_url && (
-                              <a href={track.spotify_url} target="_blank" rel="noreferrer"
-                                className="text-cream/20 hover:text-green-400 transition-colors">
-                                <ExternalLink size={12} />
-                              </a>
-                            )}
                           </div>
                         ))}
                       </motion.div>

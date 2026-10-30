@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { MapPin, Calendar, Ticket, XCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { supabase, TourDate } from '../lib/supabase'
+import { TourDate } from '../lib/supabase'
+import { getTourDates } from '../lib/dataService'
 import { format } from 'date-fns'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 
@@ -12,12 +13,9 @@ export default function TourPage() {
   const [filter, setFilter] = useState<'upcoming' | 'all'>('upcoming')
 
   useEffect(() => {
-    const query = supabase.from('tour_dates').select('*').order('event_date', { ascending: true })
-    if (filter === 'upcoming') {
-      query.gte('event_date', new Date().toISOString().split('T')[0])
-    }
-    query.then(({ data }) => {
-      if (data) setDates(data as TourDate[])
+    setLoading(true)
+    getTourDates(filter === 'upcoming').then((data) => {
+      setDates(data)
       setLoading(false)
     })
   }, [filter])
@@ -29,10 +27,10 @@ export default function TourPage() {
           <div className="text-[15rem] font-display font-black text-gold-500 leading-none">LIVE</div>
         </div>
         <div className="relative z-10 max-w-7xl mx-auto">
-          <p className="section-subtitle mb-4">2026 Stadium World Tour</p>
+          <p className="section-subtitle mb-4">Still The Problem 2026 Stadium Tour</p>
           <h1 className="section-title">Tour Dates</h1>
           <p className="mt-4 text-cream/50 max-w-xl">
-            Experience Morgan Wallen live. Select a city near you and get your tickets before they sell out.
+            Experience Morgan Wallen live with Brooks & Dunn, HARDY, and special guests. Select your city below to secure tickets.
           </p>
         </div>
       </div>
@@ -49,20 +47,13 @@ export default function TourPage() {
                   filter === f ? 'bg-gold-500 text-dark-900' : 'border border-gold-500/30 text-cream/50 hover:border-gold-500/60'
                 }`}
               >
-                {f === 'upcoming' ? 'Upcoming' : 'All Shows'}
+                {f === 'upcoming' ? 'Upcoming Shows' : 'All Shows'}
               </button>
             ))}
           </div>
 
           {loading ? <LoadingSpinner /> : (
             <div className="space-y-3">
-              {dates.length === 0 && (
-                <div className="text-center py-20 text-cream/40">
-                  <Calendar size={48} className="mx-auto mb-4 opacity-30" />
-                  <p className="font-serif text-xl">No upcoming dates found.</p>
-                  <p className="text-sm mt-2">Check back soon — new shows are always being announced.</p>
-                </div>
-              )}
               {dates.map((date, i) => (
                 <motion.div
                   key={date.id}

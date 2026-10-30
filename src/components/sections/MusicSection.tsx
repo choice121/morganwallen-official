@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Play, Music } from 'lucide-react'
-import { supabase, Album } from '../../lib/supabase'
+import { Album } from '../../lib/supabase'
+import { getAlbums } from '../../lib/dataService'
 import { ikUrl, PLACEHOLDER_IMAGES } from '../../lib/imagekit'
 import SectionHeader from '../ui/SectionHeader'
 
@@ -14,23 +15,19 @@ export default function MusicSection() {
   const [albums, setAlbums] = useState<Album[]>([])
 
   useEffect(() => {
-    supabase
-      .from('albums')
-      .select('*')
-      .order('release_date', { ascending: false })
-      .limit(3)
-      .then(({ data }) => { if (data) setAlbums(data as Album[]) })
+    getAlbums().then((data) => {
+      setAlbums(data.slice(0, 3))
+    })
   }, [])
 
   return (
     <section id="music-section" className="section-padding bg-dark-800">
       <div className="container-xl">
-        <SectionHeader subtitle="Discography" title="Latest Music" description="Three studio albums of authentic country storytelling." />
-
+        <SectionHeader subtitle="Discography" title="Latest Music" description="Studio albums of authentic country storytelling." />
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {(albums.length ? albums : Array(3).fill(null)).map((album, i) => (
+          {albums.map((album, i) => (
             <motion.div
-              key={album?.id ?? i}
+              key={album.id}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -39,8 +36,8 @@ export default function MusicSection() {
             >
               <div className="aspect-square relative overflow-hidden">
                 <img
-                  src={album?.cover_image ? ikUrl(album.cover_image) : PLACEHOLDER_IMAGES.album}
-                  alt={album?.title ?? 'Album'}
+                  src={album.cover_image ? ikUrl(album.cover_image) : PLACEHOLDER_IMAGES.album}
+                  alt={album.title}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.album }}
                 />
@@ -57,15 +54,15 @@ export default function MusicSection() {
               </div>
               <div className="p-5">
                 <p className="text-gold-400/70 text-xs font-display uppercase tracking-widest mb-1">
-                  {album?.release_date ? new Date(album.release_date).getFullYear() : '—'}
+                  {album.release_date ? new Date(album.release_date).getFullYear() : '—'}
                 </p>
                 <h3 className="font-serif text-xl font-semibold text-cream group-hover:text-gold-400 transition-colors">
-                  {album?.title ?? 'Loading...'}
+                  {album.title}
                 </h3>
-                <p className="mt-2 text-cream/50 text-sm line-clamp-2">{album?.description ?? ''}</p>
+                <p className="mt-2 text-cream/50 text-sm line-clamp-2">{album.description ?? ''}</p>
                 <div className="mt-4 flex gap-3 flex-wrap">
                   <a
-                    href={album?.spotify_url || MW_SPOTIFY}
+                    href={album.spotify_url || MW_SPOTIFY}
                     target="_blank"
                     rel="noreferrer"
                     className="text-xs text-cream/50 hover:text-green-400 transition-colors font-display uppercase tracking-wider"
@@ -73,7 +70,7 @@ export default function MusicSection() {
                     Spotify
                   </a>
                   <a
-                    href={album?.apple_music_url || MW_APPLE}
+                    href={album.apple_music_url || MW_APPLE}
                     target="_blank"
                     rel="noreferrer"
                     className="text-xs text-cream/50 hover:text-pink-400 transition-colors font-display uppercase tracking-wider"
@@ -93,7 +90,6 @@ export default function MusicSection() {
             </motion.div>
           ))}
         </div>
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

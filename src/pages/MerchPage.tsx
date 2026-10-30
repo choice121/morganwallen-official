@@ -1,115 +1,104 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ShoppingBag, ExternalLink, Tag } from 'lucide-react'
-import { supabase, MerchItem } from '../lib/supabase'
+import { ShoppingBag, ExternalLink } from 'lucide-react'
+import { MerchItem } from '../lib/supabase'
+import { getMerch } from '../lib/dataService'
 import { ikUrl, PLACEHOLDER_IMAGES } from '../lib/imagekit'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
-
-const MERCH_CATS = ['all', 'apparel', 'accessories', 'collectibles']
 
 export default function MerchPage() {
   const [items, setItems] = useState<MerchItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [cat, setCat] = useState('all')
+  const [category, setCategory] = useState<string>('all')
 
   useEffect(() => {
-    const q = supabase.from('merch_items').select('*').eq('is_available', true)
-    if (cat !== 'all') q.eq('category', cat)
-    q.then(({ data }) => {
-      if (data) setItems(data as MerchItem[])
+    setLoading(true)
+    getMerch().then((data) => {
+      setItems(data)
       setLoading(false)
     })
-  }, [cat])
+  }, [])
+
+  const categories = ['all', ...Array.from(new Set(items.map(i => i.category).filter(Boolean)))] as string[]
+  const filtered = category === 'all' ? items : items.filter(i => i.category === category)
 
   return (
     <div className="min-h-screen bg-dark-800 pt-24">
-      <div className="py-20 px-4 bg-dark-900 relative overflow-hidden">
-        <div className="absolute right-0 bottom-0 opacity-5 pointer-events-none select-none">
-          <div className="text-[12rem] font-display font-black text-gold-500 leading-none">MERCH</div>
-        </div>
+      <div className="relative py-20 px-4 bg-dark-900 overflow-hidden">
         <div className="relative z-10 max-w-7xl mx-auto">
           <p className="section-subtitle mb-4">Official Store</p>
           <h1 className="section-title">Merchandise</h1>
-          <p className="mt-4 text-cream/50 max-w-xl">Official Morgan Wallen merchandise. All items ship directly from the official store.</p>
+          <p className="mt-4 text-cream/50 max-w-xl">
+            Official Morgan Wallen apparel, tour merchandise, headwear, vinyl, and collectibles.
+          </p>
         </div>
       </div>
 
       <div className="section-padding">
         <div className="container-xl">
-          <div className="flex flex-wrap gap-2 mb-10">
-            {MERCH_CATS.map(c => (
+          {/* Categories */}
+          <div className="flex gap-3 mb-10 overflow-x-auto pb-2 scrollbar-none">
+            {categories.map((cat) => (
               <button
-                key={c}
-                onClick={() => setCat(c)}
-                className={`px-4 py-2 text-xs font-display uppercase tracking-widest rounded-sm transition-all ${
-                  cat === c ? 'bg-gold-500 text-dark-900' : 'border border-gold-500/20 text-cream/50 hover:border-gold-500/40'
+                key={cat}
+                onClick={() => setCategory(cat)}
+                className={`px-5 py-2 text-xs font-display uppercase tracking-widest rounded-sm whitespace-nowrap transition-all ${
+                  category === cat ? 'bg-gold-500 text-dark-900 font-bold' : 'border border-gold-500/30 text-cream/50 hover:border-gold-500/60'
                 }`}
               >
-                {c}
+                {cat}
               </button>
             ))}
           </div>
 
           {loading ? <LoadingSpinner /> : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {items.map((item, i) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {filtered.map((item, i) => (
                 <motion.div
                   key={item.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.07 }}
-                  className="group bg-dark-700 rounded-sm overflow-hidden card-hover gold-border"
+                  transition={{ delay: i * 0.05 }}
+                  className="group bg-dark-700 rounded-sm overflow-hidden card-hover flex flex-col"
                 >
-                  <div className="aspect-square relative overflow-hidden">
+                  <div className="aspect-square relative overflow-hidden bg-dark-600">
                     <img
                       src={item.image ? ikUrl(item.image) : PLACEHOLDER_IMAGES.merch}
                       alt={item.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.merch }}
                     />
-                    <div className="absolute inset-0 bg-dark-900/0 group-hover:bg-dark-900/60 transition-colors duration-300 flex items-center justify-center">
-                      <a
-                        href={item.shop_url || '#'}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn-gold py-2 px-5 text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-2"
-                      >
-                        <ShoppingBag size={14} /> Shop Now
-                      </a>
-                    </div>
-                    {item.is_featured && (
-                      <div className="absolute top-3 left-3 bg-gold-500 text-dark-900 text-xs font-display uppercase tracking-widest px-2 py-1 font-bold">
-                        Featured
-                      </div>
+                    {item.category && (
+                      <span className="absolute top-3 left-3 bg-dark-900/80 text-cream/70 text-xs font-display uppercase tracking-widest px-2.5 py-1">
+                        {item.category}
+                      </span>
                     )}
                   </div>
-                  <div className="p-5">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Tag size={12} className="text-gold-400/60" />
-                      <span className="text-gold-400/60 text-xs font-display uppercase tracking-widest">{item.category}</span>
+
+                  <div className="p-4 flex-1 flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-serif text-base font-semibold text-cream group-hover:text-gold-400 transition-colors">
+                        {item.name}
+                      </h3>
+                      {item.description && (
+                        <p className="mt-1 text-cream/50 text-xs line-clamp-2">{item.description}</p>
+                      )}
                     </div>
-                    <h3 className="font-serif text-lg font-semibold text-cream">{item.name}</h3>
-                    {item.description && <p className="mt-1 text-cream/50 text-sm line-clamp-2">{item.description}</p>}
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className="text-gold-400 text-2xl font-bold font-display">${item.price.toFixed(2)}</span>
+                    <div className="mt-4 pt-3 border-t border-gold-500/10 flex items-center justify-between">
+                      <span className="text-gold-400 font-display font-bold text-lg">${item.price}</span>
                       <a
-                        href={item.shop_url || '#'}
+                        href={item.shop_url || 'https://shop.morganwallen.com'}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-1 text-xs text-cream/40 hover:text-gold-400 transition-colors font-display uppercase tracking-wider"
+                        className="btn-gold py-1.5 px-3.5 text-xs inline-flex items-center gap-1.5"
                       >
-                        Buy <ExternalLink size={11} />
+                        <ShoppingBag size={12} />
+                        Buy Now
                       </a>
                     </div>
                   </div>
                 </motion.div>
               ))}
-              {items.length === 0 && (
-                <div className="col-span-3 text-center py-20 text-cream/40">
-                  <ShoppingBag size={48} className="mx-auto mb-4 opacity-30" />
-                  <p className="font-serif text-xl">No items in this category.</p>
-                </div>
-              )}
             </div>
           )}
         </div>

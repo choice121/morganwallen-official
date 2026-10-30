@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
-import { supabase, NewsPost } from '../../lib/supabase'
+import { ArrowRight, Calendar } from 'lucide-react'
+import { NewsPost } from '../../lib/supabase'
+import { getNews } from '../../lib/dataService'
 import { ikUrl, PLACEHOLDER_IMAGES } from '../../lib/imagekit'
 import { format } from 'date-fns'
 import SectionHeader from '../ui/SectionHeader'
@@ -11,71 +12,62 @@ export default function NewsSection() {
   const [posts, setPosts] = useState<NewsPost[]>([])
 
   useEffect(() => {
-    supabase
-      .from('news_posts')
-      .select('*')
-      .eq('is_published', true)
-      .not('published_at', 'is', null)
-      .order('published_at', { ascending: false })
-      .limit(3)
-      .then(({ data }) => { if (data) setPosts(data as NewsPost[]) })
+    getNews().then((data) => {
+      setPosts(data.slice(0, 3))
+    })
   }, [])
 
   return (
-    <section className="section-padding bg-dark-800">
+    <section className="section-padding bg-dark-700">
       <div className="container-xl">
-        <SectionHeader subtitle="Latest Updates" title="News & Updates" />
+        <SectionHeader subtitle="Latest Updates" title="News & Press" description="The latest announcements, tour news, and milestones from Morgan Wallen." />
 
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {(posts.length ? posts : Array(3).fill(null)).map((post, i) => (
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+          {posts.map((post, i) => (
             <motion.article
-              key={post?.id ?? i}
+              key={post.id}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className={`group bg-dark-700 rounded-sm overflow-hidden card-hover gold-border ${i === 0 ? 'md:col-span-2' : ''}`}
+              transition={{ delay: i * 0.12 }}
+              className="group bg-dark-800 rounded-sm overflow-hidden card-hover flex flex-col"
             >
-              <div className={`relative overflow-hidden ${i === 0 ? 'aspect-video' : 'aspect-[4/3]'}`}>
+              <div className="aspect-[16/10] relative overflow-hidden bg-dark-600">
                 <img
-                  src={post?.cover_image ? ikUrl(post.cover_image) : PLACEHOLDER_IMAGES.news}
-                  alt={post?.title ?? 'News'}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  src={post.cover_image ? ikUrl(post.cover_image) : PLACEHOLDER_IMAGES.news}
+                  alt={post.title}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGES.news }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-dark-900/90 to-transparent" />
-                {post && (
-                  <div className="absolute top-3 left-3">
-                    <span className="bg-gold-500/90 text-dark-900 text-xs font-display uppercase tracking-widest px-2 py-1 font-semibold">
-                      {post.category}
-                    </span>
-                  </div>
-                )}
+                <span className="absolute top-3 left-3 bg-gold-500 text-dark-900 text-xs font-display font-bold uppercase tracking-widest px-2.5 py-1">
+                  {post.category}
+                </span>
               </div>
-              <div className="p-6">
-                {post ? (
-                  <>
-                    <p className="text-cream/40 text-xs mb-2 font-display uppercase tracking-wider">
-                      {post.published_at ? format(new Date(post.published_at), 'MMMM d, yyyy') : ''}
-                    </p>
-                    <h3 className={`font-serif font-bold text-cream group-hover:text-gold-400 transition-colors leading-tight ${i === 0 ? 'text-2xl' : 'text-lg'}`}>
-                      {post.title}
-                    </h3>
-                    <p className="mt-2 text-cream/50 text-sm line-clamp-2">{post.excerpt}</p>
-                    <Link
-                      to={`/news/${post.slug}`}
-                      className="mt-4 inline-flex items-center gap-1 text-gold-400 text-sm font-display uppercase tracking-widest hover:gap-3 transition-all"
-                    >
-                      Read More <ArrowRight size={14} />
-                    </Link>
-                  </>
-                ) : (
-                  <div className="space-y-2 animate-pulse">
-                    <div className="h-3 bg-dark-600 rounded w-24" />
-                    <div className="h-6 bg-dark-600 rounded w-full" />
-                    <div className="h-4 bg-dark-600 rounded w-3/4" />
+
+              <div className="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-1.5 text-cream/40 text-xs font-display uppercase tracking-wider mb-2">
+                    <Calendar size={12} />
+                    <span>{post.published_at ? format(new Date(post.published_at), 'MMMM d, yyyy') : 'Recent'}</span>
                   </div>
-                )}
+                  <h3 className="font-serif text-xl font-semibold text-cream group-hover:text-gold-400 transition-colors line-clamp-2">
+                    {post.title}
+                  </h3>
+                  {post.excerpt && (
+                    <p className="mt-3 text-cream/60 text-sm line-clamp-3 leading-relaxed">
+                      {post.excerpt}
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-gold-500/10">
+                  <Link
+                    to={`/news/${post.slug}`}
+                    className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-widest text-gold-400 hover:text-gold-300 transition-colors"
+                  >
+                    Read Full Story <ArrowRight size={13} />
+                  </Link>
+                </div>
               </div>
             </motion.article>
           ))}
@@ -85,9 +77,11 @@ export default function NewsSection() {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="mt-10 text-center"
+          className="mt-12 text-center"
         >
-          <Link to="/news" className="btn-outline">All News</Link>
+          <Link to="/news" className="btn-outline">
+            View All News
+          </Link>
         </motion.div>
       </div>
     </section>

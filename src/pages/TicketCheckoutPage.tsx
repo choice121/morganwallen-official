@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Ticket, Shield, CheckCircle, MapPin, Calendar, Clock, ChevronRight, Minus, Plus, Crown, Star, Users, Music } from 'lucide-react'
 import { supabase, TourDate, TicketOrder } from '../lib/supabase'
+import { getTourDateById } from '../lib/dataService'
 import { useAuth } from '../hooks/useAuth'
 import { format } from 'date-fns'
 
@@ -64,8 +65,8 @@ export default function TicketCheckoutPage() {
 
   useEffect(() => {
     if (!id) return
-    supabase.from('tour_dates').select('*').eq('id', id).single().then(({ data }) => {
-      if (data) setShow(data as TourDate)
+    getTourDateById(id).then((data) => {
+      if (data) setShow(data)
       setLoading(false)
     })
   }, [id])
